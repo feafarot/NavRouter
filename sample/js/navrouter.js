@@ -1,4 +1,4 @@
-// Navigation router JavaScript library v0.9.2
+// Navigation router JavaScript library v0.8.0
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
@@ -209,7 +209,7 @@ var Routing;
     };
 
     //---Router singletone--------------------------------------------------------------------------------------------------------------*
-    function Router() {
+    function Router () {
         //# Private fields
         var $ref = {},
             hashSymbol = "#!/",
@@ -242,10 +242,6 @@ var Routing;
 
         function writeLog(message) {
             if ($ref.loggingEnabled) {
-                if (typeof console == "undefined") {
-                    return;
-                }
-                
                 console.log("Router >> " + message);
                 //logger.info("Router >> " + message);
             }
@@ -489,7 +485,7 @@ var Routing;
 
         function fixPath(path) {
             if (!path.match(/^/ + hashSymbol + /.+/)) {
-                return hashSymbol + path.replace("#/", "");
+                return hashSymbol + path.replace("#/",  "");
             }
         };
 
