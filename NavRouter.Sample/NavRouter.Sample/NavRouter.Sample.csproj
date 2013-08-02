@@ -135,6 +135,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\lib\navrouter.js">
+      <Link>Scripts\Dev\navrouter.js</Link>
+    </Content>
+    <Content Include="..\..\lib\navrouter.ko.js">
+      <Link>Scripts\Dev\navrouter.ko.js</Link>
+    </Content>
     <Content Include="Content\bootstrap-responsive.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\themes\base\images\animated-overlay.gif" />
