@@ -1,4 +1,4 @@
-// Navigation router JavaScript library v0.8.0
+// Navigation router JavaScript library v0.9.5
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
@@ -208,8 +208,8 @@ var Routing;
         return __ins;
     };
 
-    //---Router singletone--------------------------------------------------------------------------------------------------------------*
-    function Router () {
+    //---Router ------------------------------------------------------------------------------------------------------------------------*
+    function Router() {
         //# Private fields
         var $ref = {},
             hashSymbol = "#!/",
@@ -229,6 +229,7 @@ var Routing;
             backNavigation = false,
             forceCaching = false,
             fresh = true,
+            forceNavigationInCache = false,
 
             viewPreloadingCompleteHandler = null,
             beforeNavigationHandler = null,
@@ -242,6 +243,10 @@ var Routing;
 
         function writeLog(message) {
             if ($ref.loggingEnabled) {
+                if (typeof console == "undefined") {
+                    return;
+                }
+                
                 console.log("Router >> " + message);
                 //logger.info("Router >> " + message);
             }
@@ -366,7 +371,6 @@ var Routing;
                         }
 
                         context.associeatedRoute.state = loadingState.loading;
-                        indication.main.show("Loading view...");
                         var jelem = $("#" + containerId);
                         var completePath = getCompletePath(routeToMap.viewPath, context.params);
                         var existing = $("[data-view=\"" + routeToMap.pattern + "\"]", jelem);
@@ -383,7 +387,11 @@ var Routing;
                         }
 
                         if (existing && existing.length >= 1) {
-                            if (routeToMap.cacheView) {
+                            if (routeToMap.cacheView || forceNavigationInCache) {
+                                if (forceNavigationInCache) {
+                                    forceNavigationInCache = false;
+                                }
+
                                 jelem.children().hide();
                                 existing.show();
                                 if (!preventRaisingNavigateToCache) {
@@ -485,7 +493,7 @@ var Routing;
 
         function fixPath(path) {
             if (!path.match(/^/ + hashSymbol + /.+/)) {
-                return hashSymbol + path.replace("#/",  "");
+                return hashSymbol + path.replace("#/", "");
             }
         };
 
@@ -550,6 +558,11 @@ var Routing;
             }
 
             hashService.setHash(last);
+        };
+
+        $ref.navigateBackInCache = function () {
+            forceNavigationInCache = true;
+            $ref.navigateBack();
         };
 
         $ref.navigateHome = function () {

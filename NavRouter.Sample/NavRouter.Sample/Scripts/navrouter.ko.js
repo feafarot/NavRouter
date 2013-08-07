@@ -1,4 +1,4 @@
-// Navigation router UI knockout intagration JavaScript library v0.8.0
+// Navigation router UI knockout intagration JavaScript library v0.9.4
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
