@@ -1,4 +1,4 @@
-// Navigation router UI knockout intagration JavaScript library v0.9.4
+// Navigation router UI knockout intagration JavaScript library v0.9.6
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
@@ -10,24 +10,43 @@
             throw new Error("Router instance do not setted. Please set it usting 'Routing.ko.setCurrentRouter' method.");
         }
     }
+    
+    function isString(obj) {
+        return typeof obj == "string" || obj instanceof String;
+    }
 
     ko.bindingHandlers.navigate = {
         init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-            var navLink = valueAccessor(),
+            var $elem = $(element),
                 bindings = allBindingsAccessor(),
-                $elem = $(element),
+                navLink = valueAccessor(),
+                payload = null,
                 oldClass;
-            if (element.tagName == "A") {
+            
+            payload = bindings.payload || null;
+            if (element.tagName == "A" && payload == null) {
                 $elem.attr("href", "#!/" + navLink);
-            }
+            }            
             else {
+                if (element.tagName == "A") {
+                    $elem.attr("href", "#");
+                }
+                
                 $elem.click(function (event) {
+                    event.stopImmediatePropagation();
+                    event.preventDefault();
                     if (_router.initialized) {
-                        _router.navigateTo(navLink);
+                    	if (payload == null) {
+	                        _router.navigateTo(navLink);
+                        }
+                        else {
+                            
+                        	_router.navigateTo(navLink, false, ko.utils.unwrapObservable(payload));
+                        }
                     }
                 });
             }
-
+            
             function checkChilds(path, route) {
                 if (Routing.Utils.getType(route) == "VirtualRoute" && route.childRoutes.length > 0) {
                     for (var i in route.childRoutes) {
@@ -66,10 +85,17 @@
     };
 
     ko.bindingHandlers.navigateBack = {
-        init: function (elem) {
-            var $elem = $(elem);
+        init: function (elem, valueAccessor) {
+            var $elem = $(elem),
+                options = valueAccessor(),
+                forceNavigationInCache = options.forceNavigationInCache || false;
+            
             $elem.click(function () {
-                _router.navigateBack();
+                if (forceNavigationInCache) {
+                    _router.navigateBackInCache();
+                } else {
+                    _router.navigateBack();
+                }
             });
         }
     };

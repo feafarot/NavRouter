@@ -132,7 +132,8 @@
                             { cacheView: true, isDefault: true, vmFactory: function (callback) { callback(new Page1VM()); }, canLeaveFn: "canLeave" }),
         new Routing.Routes.NavigationRoute("pages/p2/:name/:value", "Page2.html?value={value}", 
                             { cacheView: false, vmFactory: function (callback) { callback(new Page2VM()); }, onNavigateTo: "onNav" }),
-        new Routing.Routes.NavigationRoute("pages/p3", "Page3.html", { cacheView: false }),
+        new Routing.Routes.NavigationRoute("pages/p3", "Page3.html", 
+                            { cacheView: false, vmFactory: function (callback) { callback(new Page3VM()); }, onNavigateTo: "onNav"}),
     ];
     var router = new Routing.Router();
     router.init(

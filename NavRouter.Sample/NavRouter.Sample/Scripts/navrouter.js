@@ -1,4 +1,4 @@
-// Navigation router JavaScript library v0.9.4
+// Navigation router JavaScript library v0.9.6
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
@@ -208,7 +208,7 @@ var Routing;
         return __ins;
     };
 
-    //---Router singletone--------------------------------------------------------------------------------------------------------------*
+    //---Router ------------------------------------------------------------------------------------------------------------------------*
     function Router() {
         //# Private fields
         var $ref = {},
@@ -229,6 +229,8 @@ var Routing;
             backNavigation = false,
             forceCaching = false,
             fresh = true,
+            forceNavigationInCache = false,
+            currentPayload = null,
 
             viewPreloadingCompleteHandler = null,
             beforeNavigationHandler = null,
@@ -323,7 +325,8 @@ var Routing;
             function raiseOnNavigateTo(context) {
                 if (routeToMap.onNavigateTo != null && (!isRedirecting || !preventRaisingNavigateTo)) {
                     var params = context.params;
-                    routeToMap.currentVM[routeToMap.onNavigateTo](params);
+                    routeToMap.currentVM[routeToMap.onNavigateTo](params, currentPayload);
+                    currentPayload = null;
                 }
             };
 
@@ -386,7 +389,11 @@ var Routing;
                         }
 
                         if (existing && existing.length >= 1) {
-                            if (routeToMap.cacheView) {
+                            if (routeToMap.cacheView || forceNavigationInCache) {
+                                if (forceNavigationInCache) {
+                                    forceNavigationInCache = false;
+                                }
+
                                 jelem.children().hide();
                                 existing.show();
                                 if (!preventRaisingNavigateToCache) {
@@ -522,9 +529,11 @@ var Routing;
         $ref.getRoute = getRoute;
         $ref.isMatches = isMatches;
 
-        $ref.navigateTo = function (path, removeCurrentHistory) {
+        $ref.navigateTo = function (path, removeCurrentHistory, payload) {
             var actualPath = path;
             var relRoute = getRoute(path);
+            
+			currentPayload = payload || null;
 
             if (removeCurrentHistory) {
                 $ref.history.pop();
@@ -553,6 +562,11 @@ var Routing;
             }
 
             hashService.setHash(last);
+        };
+
+        $ref.navigateBackInCache = function () {
+            forceNavigationInCache = true;
+            $ref.navigateBack();
         };
 
         $ref.navigateHome = function () {
