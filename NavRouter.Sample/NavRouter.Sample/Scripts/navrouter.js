@@ -1,4 +1,4 @@
-// Navigation router JavaScript library v0.9.8
+// Navigation router JavaScript library v0.9.8.1
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
@@ -186,6 +186,7 @@ var Routing;
                         return;
                     }
 
+                    storedHash = window.location.hash;
                     hashChanged(window.location.hash);
                 }
             }
@@ -371,6 +372,7 @@ var Routing;
                             }
                         };
 
+
                         if (isNotNull(beforeNavigationHandler)) {
                             beforeNavigationHandler();
                         }
@@ -422,7 +424,6 @@ var Routing;
                                         }
 
                                         if (routeToMap.vmFactory != null) {
-                                            // Fix bug with actions REWORK TO ANOTHER SOLUTION IF POSSIBLE
                                             if (isNotNoU(existing) && isNotNoU(existing.get(0))) {
                                                 ko.cleanNode(existing.get(0));
                                             }
@@ -507,7 +508,6 @@ var Routing;
         };
 
         function preloadAllViews() {
-
         };
 
         //# Public fields
