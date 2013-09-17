@@ -1,10 +1,10 @@
-// Navigation router JavaScript library v0.9.8.1
+// Navigation router JavaScript library v0.9.9
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
 var Routing;
 (function () {
-    //---Utils--------------------------------------------------------------------------------------------------------------------------*
+    //#region Utilities
     function isNull(target) {
         return target == null;
     };
@@ -44,9 +44,18 @@ var Routing;
         var hash = matches ? matches[1] : '';
         return hash;
     };
+    //#endregion
+    
+    var loadingState = new (function () {
+        var $ref = {
+            canceled: -1,
+            complete: 1,
+            loading: 2
+        };
+        return $ref;
+    })();
 
-
-    //---Classes------------------------------------------------------------------------------------------------------------------------*
+    //#region Routes clasees
     function Route(routePattern, options) {
         if (isNoU(routePattern)) {
             throw new Error("Route pattern should be specified!");
@@ -111,15 +120,7 @@ var Routing;
 
         return $.extend(this, new Route(routePattern, options));
     };
-
-    var loadingState = new (function () {
-        var $ref = {
-            canceled: -1,
-            complete: 1,
-            loading: 2
-        };
-        return $ref;
-    })();
+    //#endregion
 
     function RouteHandler(pattern, handler) {
         var $ref = this;
@@ -211,10 +212,41 @@ var Routing;
         };
     };
 
-    //---Router ------------------------------------------------------------------------------------------------------------------------*
+    function DefaultRouterLogger() {
+        var $ref = this;
+
+        function write(message) {
+            if (typeof console == "undefined") {
+                return;
+            }
+
+            console.log(message);
+        }
+
+        $ref.warning = function (message) {
+            write("Router [Warning] >> " + message);
+        };
+
+        $ref.error = function (message) {
+            write("Router [Error]!  >> " + message);
+        };
+
+        $ref.info = function (message) {
+            write("Router [Info]    >> " + message);
+        }
+    }
+
+    function SilentLogger() {
+        var $ref = this;
+        $ref.warning = function (message) { };
+        $ref.error = function (message) { };
+        $ref.info = function (message) { };
+    }
+
+    // Main Router class.
     function Router() {
-        //# Private fields
-        var $ref = {},
+        // Private fields
+        var $ref = this,
             hashSymbol = "#!/",
             sammy,
             hashService = new HashService(),
@@ -234,7 +266,8 @@ var Routing;
             fresh = true,
             forceReloadOnNavigation = false,
             forceNavigationInCache = false,
-            
+            currentLogger = new SilentLogger(),
+
             currentPayload = null,
 
             viewPreloadingCompleteHandler = null,
@@ -242,19 +275,11 @@ var Routing;
             afterNavigationHandler = null,
             navigationErrorHandler = null;
 
-        //# Private functions
+
+        // Private functions
+        //#region Utils
         function loadView(path, region, callback) {
             callback(true);
-        };
-
-        function writeLog(message) {
-            if ($ref.loggingEnabled) {
-                if (typeof console == "undefined") {
-                    return;
-                }
-                
-                console.log("Router >> " + message);
-            }
         };
 
         function getRoute(routeLink) {
@@ -324,7 +349,126 @@ var Routing;
         function create(className) {
             return eval("new " + className + "()");
         };
+        
+        function fixPath(path) {
+            if (!path.match(/^/ + hashSymbol + /.+/)) {
+                return hashSymbol + path.replace("#/", "");
+            }
+        };
 
+        function createCurrentRoute() {
+            return (ko && ko.observable)
+                ? ko.observable(null)
+                : new (function () {
+                    var _currentRoute = null;
+                    return function (value) {
+                        if (isUndefined(value)) {
+                            return _currentRoute;
+                        } else {
+                            _currentRoute = value;
+                            return _currentRoute;
+                        }
+                    }
+                })();
+        };
+        //#endregion
+
+        //#region Hash Events handlers.
+        function getContext(route, hash) {
+            var context = {};
+            context.associeatedRoute = route;
+            context.path = hash.replace(hashSymbol, "");
+            var params = {};
+            var patternParts = route.pattern.split("/");
+            var pathParts = hash.replace(hashSymbol, "").split("/");
+            if (pathParts.length != patternParts.length) {
+                throw new Error("Invalid path. Unable to create navigation context.");
+            }
+
+            for (var i = 0; i < patternParts.length; i++) {
+                if (patternParts[i].toString().match(/^:.+/)) {
+                    var paramName = patternParts[i].toString().replace(":", "");
+                    params[paramName] = pathParts[i];
+                }
+            }
+
+            context.params = params;
+            return context;
+        };
+
+        function hashChanginHandler(hash, callback) {
+            if (isNoU(getRoute(hash))) {
+                callback(true);
+                currentLogger.error("Navigation to '" + hash + "' was prevented. The route to this pattern was not found.")
+                return;
+            }
+
+            if ($ref.currentRoute() == null) {
+                callback(false);
+                return;
+            }
+
+            // Can leave route processing.
+            var context = this;
+            if (!isRedirecting) {
+                $ref.currentRoute().canLeave(function (response) {
+                    if (!response) {
+                        isRedirecting = true;
+                        preventRaisingNavigateTo = true;
+                        hashService.setLocation(currentHash);
+                    }
+                    else {
+                        isRedirecting = false;
+                        currentHash = hash;
+                        callback();
+                        preventRaisingNavigateTo = false;
+                    }
+                });
+            }
+            else {
+                isRedirecting = false;
+                currentHash = hash;
+                callback(false);
+                preventRaisingNavigateTo = false;
+            }
+        };
+
+        function hashChangedHandler (hash) {
+            var route = getRoute(hash);
+            var context = getContext(route, hash);
+            var routeHandler;
+            var delegate = function (x) { return x.pattern == route.pattern; };
+            for (var i = 0; i < handlers.length; i++) {
+                if (delegate(handlers[i])) {
+                    routeHandler = handlers[i];
+                }
+            }
+
+            if (isNotNoU($ref.currentRoute())) {
+                $ref.currentRoute().state = loadingState.canceled;
+            }
+
+            routeHandler.handler(context);
+        };
+
+        function afterHashChangedHandler (hash) {
+            if (!preventRaisingNavigateTo) {
+                currentLogger.info("Navigated to '" + hash + "'.");
+                if (!backNavigation) {
+                    $ref.history.push(hash);
+                } else {
+                    backNavigation = false;
+                }
+            }
+            else {
+                currentLogger.info("Navigion was prevented.");
+            }
+
+            $ref.refreshCurrentRoute();
+        };
+        //#endregion
+
+        //#region Route init method
         function initRoute(routeToMap) {
             function raiseOnNavigateTo(context) {
                 if (routeToMap.onNavigateTo != null && (!isRedirecting || !preventRaisingNavigateTo)) {
@@ -335,7 +479,7 @@ var Routing;
             };
 
             allRoutes.push(routeToMap);
-            writeLog("Registering route '" + routeToMap.pattern + "'.");
+            currentLogger.info("Registering route '" + routeToMap.pattern + "'.");
             switch (getType(routeToMap)) {
                 case "FuncRoute":
                     handlers.push(new RouteHandler(routeToMap.pattern, function (context) {
@@ -367,7 +511,7 @@ var Routing;
 
                         function onNavigationError() {
                             if (isNotNull(navigationErrorHandler)) {
-                                writeLog("Navigation error is handling...")
+                                currentLogger.warning("Navigation error is handling...")
                                 navigationErrorHandler();
                             }
                         };
@@ -393,48 +537,59 @@ var Routing;
                             document.title = defaultTitle;
                         }
 
-                        if (existing && existing.length >= 1) {
-                            if ((routeToMap.cacheView || forceNavigationInCache) && !forceReloadOnNavigation) {
+                        if (existing && existing.length >= 1) { // Requested view already existing
+                            if ((routeToMap.cacheView || forceNavigationInCache) && !forceReloadOnNavigation) { // Showing cached view
                                 if (forceNavigationInCache) {
                                     forceNavigationInCache = false;
                                 }
 
                                 jelem.children().hide();
                                 existing.show();
-                                if (!preventRaisingNavigateToCache) {
+                                if (!preventRaisingNavigateToCache) { // This mean, that on navigation to the cache onNavigateTo shouldn't be called
                                     raiseOnNavigateTo(context);
                                 }
 
                                 completeNavigation();
                             }
-                            else if (!preventRaisingNavigateToCache) {
-                                if (forceReloadOnNavigation) {
-                                    forceReloadOnNavigation = false;
-                                }
+                            else 
+                                if (!preventRaisingNavigateToCache) { // Requesting view exists but should be reloaded
+                                    if (forceReloadOnNavigation) {
+                                        forceReloadOnNavigation = false;
+                                    }
                                 
-                                $.ajax({
-                                    url: completePath,
-                                    data: null,
-                                    cache: false,
-                                    error: onNavigationError,
-                                    success: function (response) {
-                                        if (routeToMap.state == loadingState.canceled) {
-                                            writeLog("Navigation to " + context.path + " was cancelled!");
-                                            return;
-                                        }
-
-                                        if (routeToMap.vmFactory != null) {
-                                            if (isNotNoU(existing) && isNotNoU(existing.get(0))) {
-                                                ko.cleanNode(existing.get(0));
+                                    $.ajax({
+                                        url: completePath,
+                                        data: null,
+                                        cache: false,
+                                        error: onNavigationError,
+                                        success: function (response) {
+                                            if (routeToMap.state == loadingState.canceled) {
+                                                currentLogger.warning("Navigation to " + context.path + " was cancelled!");
+                                                return;
                                             }
-                                        }
 
-                                        existing.html(response);
-                                        if (routeToMap.vmFactory != null) {
-                                            var factory = eval(routeToMap.vmFactory);
-                                            factory(function (instance) {
-                                                ko.applyBindings(instance, existing.get(0));
-                                                routeToMap.currentVM = instance;
+                                            if (routeToMap.vmFactory != null) { // If view model exists ko cleanups existing element
+                                                if (isNotNoU(existing) && isNotNoU(existing.get(0))) {
+                                                    ko.cleanNode(existing.get(0));
+                                                }
+                                            }
+
+                                            existing.html(response);
+                                            if (routeToMap.vmFactory != null) { // View contains view model
+                                                var factory = eval(routeToMap.vmFactory);
+                                                factory(function (instance) {
+                                                    ko.applyBindings(instance, existing.get(0));
+                                                    routeToMap.currentVM = instance;
+                                                    jelem.children().hide();
+                                                    if (!preventRaisingNavigateToCache) {
+                                                        raiseOnNavigateTo(context);
+                                                    }
+
+                                                    existing.show();
+                                                    completeNavigation();
+                                                });
+                                            } else { // View without view model
+                                                routeToMap.currentVM = null;
                                                 jelem.children().hide();
                                                 if (!preventRaisingNavigateToCache) {
                                                     raiseOnNavigateTo(context);
@@ -442,24 +597,15 @@ var Routing;
 
                                                 existing.show();
                                                 completeNavigation();
-                                            });
-                                        } else {
-                                            routeToMap.currentVM = null;
-                                            jelem.children().hide();
-                                            if (!preventRaisingNavigateToCache) {
-                                                raiseOnNavigateTo(context);
                                             }
-
-                                            existing.show();
-                                            completeNavigation();
                                         }
-                                    }
-                                });
-                            } else {
-                                completeNavigation();
-                            }
+                                    });
+                                }
+                                else { // Mean, that navigation was prevented (used by router internally to handle canceled navigations)
+                                    completeNavigation();
+                                }
                         }
-                        else {
+                        else { // View does not exists
                             $.ajax({
                                 url: completePath,
                                 data: null,
@@ -467,13 +613,13 @@ var Routing;
                                 error: onNavigationError,
                                 success: function (response) {
                                     if (routeToMap.state == loadingState.canceled) {
-                                        writeLog("Navigation to " + context.path + " were cancelled!");
+                                        currentLogger.warning("Navigation to " + context.path + " were cancelled!");
                                         return;
                                     }
 
                                     jelem.children().hide();
-                                    jelem.append("<div data-view=\"" + routeToMap.pattern + "\">" + response + "</div>");
-                                    if (routeToMap.vmFactory != null) {
+                                    jelem.append("<div data-view=\"" + routeToMap.pattern + "\">" + response + "</div>"); // View wrap container that store system info
+                                    if (routeToMap.vmFactory != null) { // View contains view model
                                         existing = $("[data-view=\"" + routeToMap.pattern + "\"]", jelem);
                                         var factory = eval(routeToMap.vmFactory);
                                         factory(function (instance) {
@@ -485,7 +631,7 @@ var Routing;
 
                                             completeNavigation();
                                         });
-                                    } else {
+                                    } else { // View without view model
                                         if (!preventRaisingNavigateToCache) {
                                             raiseOnNavigateTo(context);
                                         }
@@ -500,40 +646,19 @@ var Routing;
                     break;
             }
         };
+        //#endregion
 
-        function fixPath(path) {
-            if (!path.match(/^/ + hashSymbol + /.+/)) {
-                return hashSymbol + path.replace("#/", "");
-            }
-        };
 
-        function preloadAllViews() {
-        };
-
-        //# Public fields
-        $ref.loggingEnabled = true;
+        // Public fields
         $ref.initialized = false;
         $ref.routes = new Array();
-        if (ko && ko.observable) {
-            $ref.currentRoute = ko.observable(null);
-        }
-        else {
-            $ref.currentRoute = new (function () {
-                var _currentRoute = null;
-                return function (value) {
-                    if (isUndefined(value)) {
-                        return _currentRoute;
-                    } else {
-                        _currentRoute = value;
-                        return _currentRoute;
-                    }
-                }
-            })();
-        }
-
+        $ref.currentRoute = createCurrentRoute();
         $ref.history = new Array();
 
+
+        // Public functions
         $ref.getRoute = getRoute;
+
         $ref.isMatches = isMatches;
 
         $ref.navigateTo = function (path, options) {
@@ -589,6 +714,7 @@ var Routing;
             return hashSymbol;
         };
 
+        //#region Configuration Methods
         $ref.registerRoute = function (routeToMap) {
             $ref.routes.push(routeToMap);
             if (routeToMap.isDefault) {
@@ -597,6 +723,7 @@ var Routing;
             }
 
             initRoute(routeToMap);
+            return $ref;
         };
 
         $ref.registerRoutes = function (routesToMap) {
@@ -605,6 +732,15 @@ var Routing;
             }
 
             defaultPath = hashSymbol + getPathForRoute(defaultRoute);
+        };
+
+        $ref.setLogger = function (logger) {
+            if (!isNotNoU(logger)) {
+                throw new Error("Parameter 'logger' is null or undefined!");
+            }
+
+            currentLogger = logger;
+            return $ref;
         };
 
         $ref.refreshCurrentRoute = function () {
@@ -616,97 +752,10 @@ var Routing;
         };
 
         $ref.init = function (routes, mainContainerId, options) {
-            function getContext(route, hash) {
-                var context = {};
-                context.associeatedRoute = route;
-                context.path = hash.replace(hashSymbol, "");
-                var params = {};
-                var patternParts = route.pattern.split("/");
-                var pathParts = hash.replace(hashSymbol, "").split("/");
-                if (pathParts.length != patternParts.length) {
-                    throw new Error("Invalid path. Unable to create navigation context.");
-                }
-
-                for (var i = 0; i < patternParts.length; i++) {
-                    if (patternParts[i].toString().match(/^:.+/)) {
-                        var paramName = patternParts[i].toString().replace(":", "");
-                        params[paramName] = pathParts[i];
-                    }
-                }
-
-                context.params = params;
-                return context;
-            };
-
-            hashService.on_changing = function (hash, callback) {
-                if (isNoU(getRoute(hash))) {
-                    callback(true);
-                    writeLog("Navigation to '" + hash + "' was prevented. The route to this pattern was not found.")
-                    return;
-                }
-
-                if ($ref.currentRoute() == null) {
-                    callback(false);
-                    return;
-                }
-
-                // Can leave route processing.
-                var context = this;
-                if (!isRedirecting) {
-                    $ref.currentRoute().canLeave(function (response) {
-                        if (!response) {
-                            isRedirecting = true;
-                            preventRaisingNavigateTo = true;
-                            hashService.setLocation(currentHash);
-                        }
-                        else {
-                            isRedirecting = false;
-                            currentHash = hash;
-                            callback();
-                            preventRaisingNavigateTo = false;
-                        }
-                    });
-                }
-                else {
-                    isRedirecting = false;
-                    currentHash = hash;
-                    callback(false);
-                    preventRaisingNavigateTo = false;
-                }
-            };
-
-            hashService.on_changed = function (hash) {
-                var route = getRoute(hash);
-                var context = getContext(route, hash);
-                var routeHandler;
-                var delegate = function (x) { return x.pattern == route.pattern; };
-                for (var i = 0; i < handlers.length; i++) {
-                    if (delegate(handlers[i])) {
-                        routeHandler = handlers[i];
-                    }
-                }
-
-                if (isNotNoU($ref.currentRoute())) {
-                    $ref.currentRoute().state = loadingState.canceled;
-                }
-
-                routeHandler.handler(context);
-            };
-            hashService.on_afterChanged = function (hash) {
-                if (!preventRaisingNavigateTo) {
-                    writeLog("Navigated to '" + hash + "'");
-                    if (!backNavigation) {
-                        $ref.history.push(hash);
-                    } else {
-                        backNavigation = false;
-                    }
-                }
-                else {
-                    writeLog("Navigion was prevented");
-                }
-
-                $ref.refreshCurrentRoute();
-            };
+            var enableLogging;
+            hashService.on_changing = hashChanginHandler;
+            hashService.on_changed = hashChangedHandler;
+            hashService.on_afterChanged = afterHashChangedHandler;
 
             if (isNotNoU(options)) {
                 forceCaching = options.preloadEnabled || false;
@@ -714,27 +763,32 @@ var Routing;
                 beforeNavigationHandler = options.beforeNavigation || null;
                 afterNavigationHandler = options.afterNavigation || null;
                 navigationErrorHandler = options.navigationError || null;
-                $ref.loggingEnabled = options.enableLogging || true;
+                enableLogging = options.enableLogging || true;
             }
 
+            currentLogger = enableLogging ? new DefaultRouterLogger() : new SilentLogger();
             containerId = mainContainerId;
             $ref.initialized = true;
             $ref.registerRoutes(routes);
-            $(document).ready($ref.updateRegions);
-            writeLog("Initialized.");
-            return { run: $ref.run };
+            currentLogger.info("Initialized.");
+            return $ref;
         };
 
         $ref.run = function () {
+            if (!$ref.initialized) {
+                throw new Error("Router is not initialized. Router should be initialized first!");
+                return;
+            }
+
             if (forceCaching) {
-                preloadAllViews(); // TODO: Implement preloading functionality!
+                // TODO: Implement preloading functionality!
                 if (isNotNoU(onPreloadComplete)) {
                     onPreloadComplete();
                 }
             }
 
             defaultTitle = document.title;
-            writeLog("Started successfully.");
+            currentLogger.info("Successfully started.");
             hashService.start();
             startupUrl = hashService.hash || defaultPath;
             if (startupUrl == defaultPath) {
@@ -744,11 +798,10 @@ var Routing;
             currentHash = startupUrl;
             return $ref;
         };
-
-        return $ref;
+        //#endregion
     };
 
-    // Namespaces configuration.
+    //#region Namespaces configuration
     Routing = Routing || {};
 
     Routing.Router = Router;
@@ -762,4 +815,6 @@ var Routing;
     Routing.Utils = Routing.Utils || {};
     Routing.Utils.getHash = getHash;
     Routing.Utils.getType = getType;
+    Routing.Utils.DefaultRouterLogger = DefaultRouterLogger;
+    //#endregion
 })();

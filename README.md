@@ -1,7 +1,7 @@
 ## NavRouter
 
 ### General information
-Current version **0.9.8.1**
+Current version **0.9.9**
 
 Licensed under **MIT** ([License Text](http://opensource.org/licenses/MIT))
 
