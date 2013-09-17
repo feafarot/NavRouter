@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "NavRouter", ".", "{86E09785-DB04-41D1-A132-FAE76A97FB30}"
 	ProjectSection(WebsiteProperties) = preProject
-		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.0"
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5"
 		Debug.AspNetCompiler.VirtualPath = "/NavRouter"
 		Debug.AspNetCompiler.PhysicalPath = "..\NavRouter\"
 		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\NavRouter\"
