@@ -1,4 +1,4 @@
-// Navigation router JavaScript library v0.9.6
+// Navigation router JavaScript library v0.9.8
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
@@ -122,16 +122,16 @@ var Routing;
     })();
 
     function RouteHandler(pattern, handler) {
-        var __ins = {};
-        __ins.pattern = pattern || null;
-        __ins.handler = handler || null;
-        return __ins;
+        var $ref = this;
+        $ref.pattern = pattern || null;
+        $ref.handler = handler || null;
     };
 
     function HashService() {
-        var __ins = {},
+        var $ref = this,
             prevHash,
-            preventNextEvent = false;
+            preventNextEvent = false,
+            storedHash;
 
         function changingCallback(cancelNavigation) {
             if (cancelNavigation) {
@@ -140,8 +140,8 @@ var Routing;
         };
 
         function hashChanged(newHash) {
-            if (isNotNoU(__ins.on_changing)) {
-                __ins.on_changing(newHash, changingCallback);
+            if (isNotNoU($ref.on_changing)) {
+                $ref.on_changing(newHash, changingCallback);
             }
 
             if (preventNextEvent) {
@@ -149,32 +149,32 @@ var Routing;
                 return;
             }
 
-            if (isNotNoU(__ins.hash) || __ins.hash == "") {
+            if (isNotNoU($ref.hash) || $ref.hash == "") {
                 prevHash = newHash;
             } else {
-                prevHash = __ins.hash;
+                prevHash = $ref.hash;
             }
 
-            __ins.hash = newHash;
+            $ref.hash = newHash;
 
-            if (isNotNoU(__ins.on_changed)) {
-                __ins.on_changed(newHash);
+            if (isNotNoU($ref.on_changed)) {
+                $ref.on_changed(newHash);
             }
 
-            if (isNotNoU(__ins.on_afterChanged)) {
-                __ins.on_afterChanged(newHash);
+            if (isNotNoU($ref.on_afterChanged)) {
+                $ref.on_afterChanged(newHash);
             }
         };
 
-        __ins.hash = "";
-        __ins.on_changing = null;
-        __ins.on_changed = null;
-        __ins.on_afterChanged = null;
+        $ref.hash = "";
+        $ref.on_changing = null;
+        $ref.on_changed = null;
+        $ref.on_afterChanged = null;
 
-        __ins.setHash = function (hash) {
+        $ref.setHash = function (hash) {
             window.location.hash = hash;
         };
-        __ins.start = function () {
+        $ref.start = function () {
             if ("onhashchange" in window) { // event supported (Google Chrome 5+, Safari 5+, Opera 10.60+, Firefox 3.6+ and Internet Explorer 8+)
                 window.onhashchange = function () {
                     if (preventNextEvent) {
@@ -182,11 +182,15 @@ var Routing;
                         return;
                     }
 
+                    if (storedHash == window.location.hash) { // This should handle (magic!)floating bug in IE9.
+                        return;
+                    }
+
                     hashChanged(window.location.hash);
                 }
             }
             else { // event not supported
-                var storedHash = window.location.hash;
+                storedHash = window.location.hash;
                 window.setInterval(function () {
                     if (window.location.hash != storedHash) {
                         if (preventNextEvent) {
@@ -204,8 +208,6 @@ var Routing;
                 onhashchange(window.location.hash);
             }
         };
-
-        return __ins;
     };
 
     //---Router ------------------------------------------------------------------------------------------------------------------------*
@@ -229,7 +231,9 @@ var Routing;
             backNavigation = false,
             forceCaching = false,
             fresh = true,
+            forceReloadOnNavigation = false,
             forceNavigationInCache = false,
+            
             currentPayload = null,
 
             viewPreloadingCompleteHandler = null,
@@ -249,7 +253,6 @@ var Routing;
                 }
                 
                 console.log("Router >> " + message);
-                //logger.info("Router >> " + message);
             }
         };
 
@@ -389,7 +392,7 @@ var Routing;
                         }
 
                         if (existing && existing.length >= 1) {
-                            if (routeToMap.cacheView || forceNavigationInCache) {
+                            if ((routeToMap.cacheView || forceNavigationInCache) && !forceReloadOnNavigation) {
                                 if (forceNavigationInCache) {
                                     forceNavigationInCache = false;
                                 }
@@ -403,6 +406,10 @@ var Routing;
                                 completeNavigation();
                             }
                             else if (!preventRaisingNavigateToCache) {
+                                if (forceReloadOnNavigation) {
+                                    forceReloadOnNavigation = false;
+                                }
+                                
                                 $.ajax({
                                     url: completePath,
                                     data: null,
@@ -466,10 +473,10 @@ var Routing;
                                     jelem.children().hide();
                                     jelem.append("<div data-view=\"" + routeToMap.pattern + "\">" + response + "</div>");
                                     if (routeToMap.vmFactory != null) {
-                                        existing = $("[data-view=\"" + routeToMap.pattern + "\"]", jelem).get(0);
+                                        existing = $("[data-view=\"" + routeToMap.pattern + "\"]", jelem);
                                         var factory = eval(routeToMap.vmFactory);
                                         factory(function (instance) {
-                                            ko.applyBindings(instance, existing);
+                                            ko.applyBindings(instance, existing.get(0));
                                             routeToMap.currentVM = instance;
                                             if (!preventRaisingNavigateToCache) {
                                                 raiseOnNavigateTo(context);
@@ -529,11 +536,17 @@ var Routing;
         $ref.getRoute = getRoute;
         $ref.isMatches = isMatches;
 
-        $ref.navigateTo = function (path, removeCurrentHistory, payload) {
-            var actualPath = path;
-            var relRoute = getRoute(path);
-            
-			currentPayload = payload || null;
+        $ref.navigateTo = function (path, options) {
+            var actualPath = path,
+                relRoute = getRoute(path),
+                removeCurrentHistory = false;
+
+            if (isNotNoU(options)) {
+                currentPayload = options.payload || null;
+                forceReloadOnNavigation = options.forceReload || false;
+                forceNavigationInCache = options.forceNavigationInCache || false;
+                removeCurrentHistory = options.removeCurrentHistory || false;
+            }
 
             if (removeCurrentHistory) {
                 $ref.history.pop();
@@ -544,7 +557,6 @@ var Routing;
             }
 
             if (actualPath == currentHash || hashSymbol + actualPath == currentHash) {
-                //$ref.refresh();
             } else {
                 actualPath = fixPath(actualPath);
                 hashService.setHash(actualPath);
