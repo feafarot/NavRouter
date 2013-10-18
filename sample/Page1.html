@@ -9,4 +9,13 @@
     <p>
         Magic number is <span class="text-info" data-bind="text: num"></span>. You can <a href="#" data-bind="click: showMagicNumber">update it</a>.
     </p>
+    <p>
+
+    <div data-bind="visible: confirmationVisible">
+        <div class="modal-footer">
+            <span style="float: left;"><i class="icon-exclamation-sign"></i> Are you sure you want to leave this page?</span>
+            <button class="btn" data-dismiss="modal" aria-hidden="true" data-bind="click: confirmYes">Yes</button>
+            <button class="btn btn-primary" data-bind="click: confirmNo">No</button>
+        </div>
+    </div>
 </div>

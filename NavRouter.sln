@@ -1,7 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "NavRouter", ".", "{86E09785-DB04-41D1-A132-FAE76A97FB30}"
+# Visual Studio 2013
+VisualStudioVersion = 12.0.20827.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "NavRouter(1)", ".", "{FED6EDDB-93FD-4907-B77E-CF79E7F64E7F}"
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5"
 		Debug.AspNetCompiler.VirtualPath = "/NavRouter"
@@ -26,8 +28,8 @@ Global
 		Debug|Any CPU = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{86E09785-DB04-41D1-A132-FAE76A97FB30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{86E09785-DB04-41D1-A132-FAE76A97FB30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FED6EDDB-93FD-4907-B77E-CF79E7F64E7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FED6EDDB-93FD-4907-B77E-CF79E7F64E7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
