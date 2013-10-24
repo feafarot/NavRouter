@@ -1,4 +1,4 @@
-// Navigation router JavaScript library v0.9.10
+// Navigation router JavaScript library v0.9.11
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
@@ -45,7 +45,7 @@ var Routing;
         return hash;
     };
     //#endregion
-    
+
     var loadingState = new (function () {
         var $ref = {
             canceled: -1,
@@ -101,9 +101,9 @@ var Routing;
         }
         else {
             if (options.vmCanLeave) {
-                options.canLeave = function (callback) {
+                options.canLeave = function (callback, navOptions) {
                     if (isNotNoU($ref.currentVM) && isNotNoU($ref.currentVM[options.vmCanLeave])) {
-                        return $ref.currentVM[options.vmCanLeave](callback);
+                        return $ref.currentVM[options.vmCanLeave](callback, navOptions);
                     }
 
                     return true;
@@ -189,7 +189,7 @@ var Routing;
                             //window.location.replace(prevHash || "");
                             return;
                         }
-                        
+
                         continueHashChanged();
                     });
                 return;
@@ -267,7 +267,7 @@ var Routing;
             }
             else { // event not supported
                 storedHash = window.location.hash;
-                window.setInterval(function () {                    
+                window.setInterval(function () {
                     if (window.location.hash != storedHash) {
                         onHashChangedEventHandler();
                     }
@@ -424,7 +424,7 @@ var Routing;
         function create(className) {
             return eval("new " + className + "()");
         };
-        
+
         function fixPath(path) {
             if (!path.match(/^/ + hashSymbol + /.+/)) {
                 return hashSymbol + path.replace("#/", "");
@@ -498,13 +498,12 @@ var Routing;
                             preventRaisingNavigateTo = false;
                         }
                         else { // Navigation cancelled
-                            //isRedirecting = true;
-                            //preventRaisingNavigateTo = true;
-                            //hashService.setHash(currentHash);
                             backNavigation = false;
-                            forceNavigationInCache = false;
                             callback(true);
                         }
+
+                        forceReloadOnNavigation = false;
+                        forceNavigationInCache = false;
                     },
                     { // Navigation info
                         targetRoute: getRoute(hash), // Target route parameter
@@ -520,7 +519,7 @@ var Routing;
             }
         };
 
-        function hashChangedHandler (hash) {
+        function hashChangedHandler(hash) {
             var route = getRoute(hash);
             var context = getContext(route, hash);
             var routeHandler;
@@ -539,17 +538,20 @@ var Routing;
 
             if (!preventRaisingNavigateTo) {
                 currentLogger.info("Navigated to '" + hash + "'.");
-                //if (!backNavigation) {
-                //    $ref.history.push(hash);
-                //} else {
-                //    backNavigation = false;
-                //}
             }
             else {
                 currentLogger.info("Navigion was prevented.");
             }
 
             $ref.refreshCurrentRoute();
+        };
+
+        function hashChangeCancelledHandler() {
+            forceReloadOnNavigation = false;
+            forceNavigationInCache = false;
+            if (isNotNoU(cancelledByUrlHandler)) {
+                cancelledByUrlHandler();
+            }
         };
         //#endregion
 
@@ -636,12 +638,12 @@ var Routing;
 
                                 completeNavigation();
                             }
-                            else 
+                            else
                                 if (!preventRaisingNavigateToCache) { // Requesting view exists but should be reloaded
                                     if (forceReloadOnNavigation) {
                                         forceReloadOnNavigation = false;
                                     }
-                                
+
                                     $.ajax({
                                         url: completePath,
                                         data: null,
@@ -767,7 +769,7 @@ var Routing;
             }
 
             if (!(actualPath == currentHash || hashSymbol + actualPath == currentHash)) {
-                actualPath = fixPath(actualPath);                
+                actualPath = fixPath(actualPath);
                 if (removeCurrentHistory) {
                     hashService.setHashAsReplace(actualPath);
                 }
@@ -805,7 +807,6 @@ var Routing;
 
         $ref.cancelledByUrl = function (handler) {
             cancelledByUrlHandler = handler;
-            hashService.on_cancelledByUrl = handler;
         };
 
         //#region Configuration Methods
@@ -849,6 +850,7 @@ var Routing;
             var enableLogging;
             hashService.on_changing = hashChanginHandler;
             hashService.on_changed = hashChangedHandler;
+            hashService.on_cancelledByUrl = hashChangeCancelledHandler;
 
             if (isNotNoU(options)) {
                 forceCaching = options.preloadEnabled || false;
@@ -902,7 +904,7 @@ var Routing;
     Routing.Routes = Routing.Routes || {};
     Routing.Routes.Route = Route;
     Routing.Routes.VirtualRoute = VirtualRoute;
-  //Routing.Routes.FuncRoute = FuncRoute; // Temporary removed from public. TODO: Implement correct behaviours with FuncRoute.
+    //Routing.Routes.FuncRoute = FuncRoute; // Temporary removed from public. TODO: Implement correct behaviours with FuncRoute.
     Routing.Routes.NavigationRoute = NavigationRoute;
 
     Routing.Utils = Routing.Utils || {};
