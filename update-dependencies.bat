@@ -1,1 +1,0 @@
-xcopy ".\lib\*.js" ".\sample\js" /y

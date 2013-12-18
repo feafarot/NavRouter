@@ -1,0 +1,1 @@
+Copy-Item ".\lib\*.js" ".\sample\js"
