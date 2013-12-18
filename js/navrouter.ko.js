@@ -1,4 +1,4 @@
-// Navigation router UI knockout intagration JavaScript library v0.9.9
+// Navigation router UI knockout intagration JavaScript library v0.9.11
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
@@ -26,7 +26,7 @@
                 oldClass;
             
             payload = bindings.payload || null;
-            if (element.tagName == "A" && payload == null && false) { //hack. rework
+            if (element.tagName == "A" && payload == null && false) { // TODO: Hack. Rework!
                 $elem.attr("href", "#!/" + navLink);
             }            
             else {
@@ -93,7 +93,7 @@
                 }
             });
 
-            _router.refreshCurrentRoute();
+            //_router.refreshCurrentRoute();
         },
     };
 

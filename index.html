@@ -128,12 +128,12 @@
 
     // Routes initialization.
     var routes = [
-        new Routing.Routes.NavigationRoute("pages/p1", "page1.html",
-                            { cacheView: true, isDefault: true, vmFactory: function (callback) { callback(new Page1VM()); }, canLeaveFn: "canLeave" }),
-        new Routing.Routes.NavigationRoute("pages/p2/:name/:value", "page2.html?value={value}", 
-                            { cacheView: false, vmFactory: function (callback) { callback(new Page2VM()); }, onNavigateTo: "onNav" }),
-        new Routing.Routes.NavigationRoute("pages/p3", "page3.html", 
-                            { cacheView: false, vmFactory: function (callback) { callback(new Page3VM()); }, onNavigateTo: "onNav"}),
+        new Routing.Routes.NavigationRoute("pages/p1", "Page1.html",
+                            { cacheView: true, isDefault: true, vmFactory: function (callback) { callback(new Page1VM()); }, vmCanLeave: "canLeave", title: "Page #1" }),
+        new Routing.Routes.NavigationRoute("pages/p2/:name/:value", "Page2.html?value={value}", 
+                            { cacheView: false, vmFactory: function (callback) { callback(new Page2VM()); }, onNavigateTo: "onNav", title: "Page #2" }),
+        new Routing.Routes.NavigationRoute("pages/p3", "Page3.html", 
+                            { cacheView: false, vmFactory: function (callback) { callback(new Page3VM()); }, onNavigateTo: "onNav", title: "Page #3" }),
     ];
     var router = new Routing.Router();
     router.init(
@@ -156,9 +156,9 @@
             }
         });
     
-    router.run();
     Routing.ko.setCurrentRouter(router);
     ko.applyBindings({});
+    router.run();
 </script>
 </body>
 </html>

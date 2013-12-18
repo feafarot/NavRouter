@@ -1,4 +1,4 @@
-// Navigation router JavaScript library v0.9.9
+// Navigation router JavaScript library v0.9.11
 // (c) Roman Konkin (feafarot) - https://github.com/feafarot/navrouter
 // License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
@@ -45,7 +45,7 @@ var Routing;
         return hash;
     };
     //#endregion
-    
+
     var loadingState = new (function () {
         var $ref = {
             canceled: -1,
@@ -55,7 +55,7 @@ var Routing;
         return $ref;
     })();
 
-    //#region Routes clasees
+    //#region Routes classes
     function Route(routePattern, options) {
         if (isNoU(routePattern)) {
             throw new Error("Route pattern should be specified!");
@@ -101,9 +101,9 @@ var Routing;
         }
         else {
             if (options.vmCanLeave) {
-                options.canLeave = function (callback) {
+                options.canLeave = function (callback, navOptions) {
                     if (isNotNoU($ref.currentVM) && isNotNoU($ref.currentVM[options.vmCanLeave])) {
-                        return $ref.currentVM[options.vmCanLeave](callback);
+                        return $ref.currentVM[options.vmCanLeave](callback, navOptions);
                     }
 
                     return true;
@@ -132,7 +132,21 @@ var Routing;
         var $ref = this,
             prevHash,
             preventNextEvent = false,
-            storedHash;
+            storedHash,
+            pending = false,
+            cancellingPrev = false,
+            callCount = 0,
+            forwardingCount = 2;
+
+        function lock() {
+            pending = true;
+            cancellingPrev = false;
+        }
+
+        function release() {
+            pending = false;
+            cancellingPrev = false;
+        }
 
         function changingCallback(cancelNavigation) {
             if (cancelNavigation) {
@@ -141,73 +155,127 @@ var Routing;
         };
 
         function hashChanged(newHash) {
-            if (isNotNoU($ref.on_changing)) {
-                $ref.on_changing(newHash, changingCallback);
-            }
+            var continueHashChanged = function () {
+                if (isNotNoU($ref.hash) || $ref.hash == "") {
+                    prevHash = newHash;
+                } else {
+                    prevHash = $ref.hash;
+                }
 
-            if (preventNextEvent) {
-                window.location.hash = prevHash || "";
+                $ref.hash = newHash;
+
+                if (isNotNoU($ref.on_changed)) {
+                    $ref.on_changed(newHash);
+                }
+
+                release();
+            };
+
+            lock();
+            callCount++;
+            if (isNotNoU($ref.on_changing)) {
+                var currentCount = callCount;
+                $ref.on_changing(
+                    newHash,
+                    function (cancelNavigation) {
+                        if (currentCount != callCount) { // Cancelled by url changing on default!
+                            return;
+                        }
+
+                        if (cancelNavigation) {
+                            release();
+                            preventNextEvent = true;
+                            history.back();
+                            //window.location.replace(prevHash || "");
+                            return;
+                        }
+
+                        continueHashChanged();
+                    });
                 return;
             }
 
-            if (isNotNoU($ref.hash) || $ref.hash == "") {
-                prevHash = newHash;
-            } else {
-                prevHash = $ref.hash;
+            continueHashChanged();
+        };
+
+        function onHashChangedEventHandler() {
+            if (pending) {
+                if (prevHash == window.location.hash) {
+                    release();
+                    storedHash = window.location.hash;
+                    preventNextEvent = false;
+                    if (isNotNoU($ref.on_cancelledByUrl)) {
+                        $ref.on_cancelledByUrl();
+                    }
+                }
+                else {
+                    if (cancellingPrev) {
+                        cancellingPrev = false;
+                    }
+                    else {
+                        cancellingPrev = true;
+                        history.back();
+                    }
+                }
+
+                return;
             }
 
-            $ref.hash = newHash;
+            if (preventNextEvent) {
+                if (prevHash != window.location.hash) {
+                    if (forwardingCount == 0) {
+                        throw new Error("History was broken, please reload page.");
+                    }
 
-            if (isNotNoU($ref.on_changed)) {
-                $ref.on_changed(newHash);
+                    forwardingCount--;
+                    history.forward();
+                }
+                else {
+                    storedHash = window.location.hash;
+                    preventNextEvent = false;
+                    forwardingCount = 2;
+                }
+
+                return;
             }
 
-            if (isNotNoU($ref.on_afterChanged)) {
-                $ref.on_afterChanged(newHash);
+            if (storedHash == window.location.hash) { // This should handle (magic!)floating bug in IE9.
+                return;
             }
+
+            storedHash = window.location.hash;
+            hashChanged(window.location.hash);
         };
 
         $ref.hash = "";
         $ref.on_changing = null;
         $ref.on_changed = null;
-        $ref.on_afterChanged = null;
+        $ref.on_cancelledByUrl = null;
 
         $ref.setHash = function (hash) {
             window.location.hash = hash;
         };
+
+        $ref.setHashAsReplace = function (hash) {
+            window.location.replace(hash);
+        };
+
         $ref.start = function () {
-            if ("onhashchange" in window) { // event supported (Google Chrome 5+, Safari 5+, Opera 10.60+, Firefox 3.6+ and Internet Explorer 8+)
-                window.onhashchange = function () {
-                    if (preventNextEvent) {
-                        preventNextEvent = false;
-                        return;
-                    }
-
-                    if (storedHash == window.location.hash) { // This should handle (magic!)floating bug in IE9.
-                        return;
-                    }
-
-                    storedHash = window.location.hash;
-                    hashChanged(window.location.hash);
-                }
+            storedHash = window.location.hash;
+            if ("onhashchange" in window) { // Event supported (Google Chrome 5+, Safari 5+, Opera 10.60+, Firefox 3.6+ and Internet Explorer 8+)
+                window.onhashchange = onHashChangedEventHandler;
             }
             else { // event not supported
                 storedHash = window.location.hash;
                 window.setInterval(function () {
                     if (window.location.hash != storedHash) {
-                        if (preventNextEvent) {
-                            preventNextEvent = false;
-                            return;
-                        }
-
-                        storedHash = window.location.hash;
-                        hashChanged(storedHash);
+                        onHashChangedEventHandler();
                     }
-                }, 100);
+                }, 77);
             }
 
             if (window.location.hash) {
-                onhashchange(window.location.hash);
+                hashChanged(window.location.hash);
             }
         };
     };
@@ -243,45 +311,52 @@ var Routing;
         $ref.info = function (message) { };
     }
 
+    function InternalNavigationFlags() {
+        var $ref = this;
+        $ref.forceReloadOnNavigation = false
+        $ref.forceNavigationInCache = false;
+        $ref.preventRaisingNavigateTo = false;
+        $ref.backNavigation = false;
+        $ref.forceCaching = false;
+        $ref.currentPayload = false;
+        $ref.isRedirecting = false;
+    }
+
     // Main Router class.
     function Router() {
         // Private fields
         var $ref = this,
             hashSymbol = "#!/",
-            sammy,
-            hashService = new HashService(),
             defaultPath = "",
-            defaultRoute = null,
             currentHash = "",
             startupUrl = "",
-            isRedirecting = false,
-            preventRaisingNavigateTo = false,
             containerId = "",
+            defaultTitle,
+            defaultRoute = null,
+            fresh = true,
             allRoutes = new Array(),
             handlers = new Array(),
-            defaultTitle,
-            aroundPreventNextCall = false,
-            backNavigation = false,
-            forceCaching = false,
-            fresh = true,
-            forceReloadOnNavigation = false,
-            forceNavigationInCache = false,
+            hashService = new HashService(),
             currentLogger = new SilentLogger(),
 
             currentPayload = null,
 
-            viewPreloadingCompleteHandler = null,
+            navigationFlags = null,
+            forceReloadOnNavigation = false,
+            forceNavigationInCache = false,
+            forceCaching = false,
+            backNavigation = false,
+            isRedirecting = false,
+            preventRaisingNavigateTo = false,
+
             beforeNavigationHandler = null,
             afterNavigationHandler = null,
-            navigationErrorHandler = null;
+            navigationErrorHandler = null,
+            cancelledByUrlHandler = null;
 
 
         // Private functions
         //#region Utils
-        function loadView(path, region, callback) {
-            callback(true);
-        };
-
         function getRoute(routeLink) {
             var delegate = function (x) {
                 var path2 = routeLink.toString().replace(hashSymbol, "");
@@ -349,7 +424,7 @@ var Routing;
         function create(className) {
             return eval("new " + className + "()");
         };
-        
+
         function fixPath(path) {
             if (!path.match(/^/ + hashSymbol + /.+/)) {
                 return hashSymbol + path.replace("#/", "");
@@ -357,19 +432,23 @@ var Routing;
         };
 
         function createCurrentRoute() {
-            return (ko && ko.observable)
-                ? ko.observable(null)
-                : new (function () {
+            if (ko && ko.observable) {
+                return ko.observable(null);
+            }
+            else {
+                return new (function () {
                     var _currentRoute = null;
                     return function (value) {
                         if (isUndefined(value)) {
                             return _currentRoute;
-                        } else {
+                        }
+                        else {
                             _currentRoute = value;
                             return _currentRoute;
                         }
                     }
                 })();
+            }
         };
         //#endregion
 
@@ -409,21 +488,28 @@ var Routing;
             }
 
             // Can leave route processing.
-            var context = this;
             if (!isRedirecting) {
-                $ref.currentRoute().canLeave(function (response) {
-                    if (!response) {
-                        isRedirecting = true;
-                        preventRaisingNavigateTo = true;
-                        hashService.setLocation(currentHash);
-                    }
-                    else {
-                        isRedirecting = false;
-                        currentHash = hash;
-                        callback();
-                        preventRaisingNavigateTo = false;
-                    }
-                });
+                $ref.currentRoute().canLeave(
+                    function (accept) { // Leaving callvack parameter
+                        if (accept) {  // Leave navigation accepted
+                            isRedirecting = false;
+                            currentHash = hash;
+                            callback();
+                            preventRaisingNavigateTo = false;
+                        }
+                        else { // Navigation cancelled
+                            backNavigation = false;
+                            callback(true);
+                        }
+
+                        forceReloadOnNavigation = false;
+                        forceNavigationInCache = false;
+                    },
+                    { // Navigation info
+                        targetRoute: getRoute(hash), // Target route parameter
+                        forceReloadOnNavigation: forceReloadOnNavigation,
+                        forceNavigationInCache: forceNavigationInCache
+                    });
             }
             else {
                 isRedirecting = false;
@@ -433,7 +519,7 @@ var Routing;
             }
         };
 
-        function hashChangedHandler (hash) {
+        function hashChangedHandler(hash) {
             var route = getRoute(hash);
             var context = getContext(route, hash);
             var routeHandler;
@@ -449,22 +535,23 @@ var Routing;
             }
 
             routeHandler.handler(context);
-        };
 
-        function afterHashChangedHandler (hash) {
             if (!preventRaisingNavigateTo) {
                 currentLogger.info("Navigated to '" + hash + "'.");
-                if (!backNavigation) {
-                    $ref.history.push(hash);
-                } else {
-                    backNavigation = false;
-                }
             }
             else {
                 currentLogger.info("Navigion was prevented.");
             }
 
             $ref.refreshCurrentRoute();
+        };
+
+        function hashChangeCancelledHandler() {
+            forceReloadOnNavigation = false;
+            forceNavigationInCache = false;
+            if (isNotNoU(cancelledByUrlHandler)) {
+                cancelledByUrlHandler();
+            }
         };
         //#endregion
 
@@ -551,12 +638,12 @@ var Routing;
 
                                 completeNavigation();
                             }
-                            else 
+                            else
                                 if (!preventRaisingNavigateToCache) { // Requesting view exists but should be reloaded
                                     if (forceReloadOnNavigation) {
                                         forceReloadOnNavigation = false;
                                     }
-                                
+
                                     $.ajax({
                                         url: completePath,
                                         data: null,
@@ -673,32 +760,36 @@ var Routing;
                 removeCurrentHistory = options.removeCurrentHistory || false;
             }
 
-            if (removeCurrentHistory) {
-                $ref.history.pop();
-            }
+            //if (removeCurrentHistory) {
+            //    $ref.history.pop();
+            //}
 
             if (relRoute != null && getType(relRoute) == "VirtualRoute") {
                 actualPath = getPathForRoute(relRoute);
             }
 
-            if (actualPath == currentHash || hashSymbol + actualPath == currentHash) {
-            } else {
+            if (!(actualPath == currentHash || hashSymbol + actualPath == currentHash)) {
                 actualPath = fixPath(actualPath);
-                hashService.setHash(actualPath);
+                if (removeCurrentHistory) {
+                    hashService.setHashAsReplace(actualPath);
+                }
+                else {
+                    hashService.setHash(actualPath);
+                }
             }
         };
 
         $ref.navigateBack = function () {
-            $ref.history.pop()
-            var last = $ref.history.pop();
-            $ref.history.push(last);
-            if (isUndefined(last)) {
-                last = defaultPath
-            } else {
-                backNavigation = true;
-            }
-
-            hashService.setHash(last);
+            //$ref.history.pop();
+            //var lastVisited = $ref.history.pop();
+            //$ref.history.push(lastVisited);
+            //if (isUndefined(lastVisited)) {
+            //    lastVisited = defaultPath
+            //} else {
+            //    backNavigation = true;
+            //}
+            //hashService.setHash(lastVisited);
+            history.back();
         };
 
         $ref.navigateBackInCache = function () {
@@ -712,6 +803,10 @@ var Routing;
 
         $ref.getHashSymbol = function () {
             return hashSymbol;
+        };
+
+        $ref.cancelledByUrl = function (handler) {
+            cancelledByUrlHandler = handler;
         };
 
         //#region Configuration Methods
@@ -755,7 +850,7 @@ var Routing;
             var enableLogging;
             hashService.on_changing = hashChanginHandler;
             hashService.on_changed = hashChangedHandler;
-            hashService.on_afterChanged = afterHashChangedHandler;
+            hashService.on_cancelledByUrl = hashChangeCancelledHandler;
 
             if (isNotNoU(options)) {
                 forceCaching = options.preloadEnabled || false;
@@ -809,7 +904,7 @@ var Routing;
     Routing.Routes = Routing.Routes || {};
     Routing.Routes.Route = Route;
     Routing.Routes.VirtualRoute = VirtualRoute;
-    Routing.Routes.FuncRoute = FuncRoute;
+    //Routing.Routes.FuncRoute = FuncRoute; // Temporary removed from public. TODO: Implement correct behaviours with FuncRoute.
     Routing.Routes.NavigationRoute = NavigationRoute;
 
     Routing.Utils = Routing.Utils || {};
