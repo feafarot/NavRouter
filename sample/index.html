@@ -1,0 +1,164 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Client Router - Sample application</title>
+    <link href="css/bootstrap.css" rel="stylesheet" />
+    <link href="css/bootstrap-responsive.css" rel="stylesheet" />
+    <link href="css/main.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container">
+                <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="brand">NavRouter - Sample</a>
+                <div class="nav-collapse collapse">
+                    <ul class="nav">
+                        <li data-bind="navigate: 'pages/p1', activeClass: 'active'"><a>Page 1</a></li>
+                        <li data-bind="navigate: 'pages/p2/api-key/75ab9d', activeClass: 'active'"><a>Page 2</a></li>
+                        <li data-bind="navigate: 'pages/p3', activeClass: 'active'"><a>Page 3</a></li>
+                        <li data-bind="navigateBack: { forceNavigationInCache: true }"><a>&nbsp;Back in Cache</a></li>
+                    </ul>
+                </div>
+                <!--/.nav-collapse -->
+            </div>
+        </div>
+    </div>
+    
+
+    <div id="busy-app" class="busy busy-app" style="display: none;">
+        <div class="in-busy-centered">
+            <div class="in-busy-spinner"></div>
+            <span class="in-busy-text">Initialization...</span>
+        </div>
+    </div>
+    
+    <div style="height: 50px;"></div>
+    <div class="container">
+        <div id="views-placeholder">
+        </div>
+    </div>
+
+    <div id="busy-main" class="busy busy-main">
+        <div class="in-busy-centered">
+            <div class="in-busy-spinner"></div>
+            <span class="in-busy-text"></span>
+        </div>
+    </div>
+
+<script type="text/javascript" src="js/jquery-2.0.3.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui-1.10.3.min.js"></script>
+<script type="text/javascript" src="js/bootstrap.js"></script>
+<script type="text/javascript" src="js/knockout-2.3.0.js"></script>
+<script type="text/javascript" src="js/spin.js"></script>
+<script type="text/javascript" src="js/jquery.spin.js"></script>
+<script type="text/javascript" src="js/navrouter.js"></script>
+<script type="text/javascript" src="js/navrouter.ko.js"></script>
+<script type="text/javascript" src="js/ViewModels/pagesViewModels.js"></script>
+
+<script type="text/javascript">
+
+    function BusyIndicator(busyId) {
+        var $ref = {},
+            $element = $("#" + busyId),
+            $msgContainer = $element.find(".in-busy-text");
+        $ref.show = function (status) {
+            $msgContainer.html(status);
+            $element.show();
+            if ($ref.afterShow != null) {
+                $ref.afterShow();
+            }
+        };
+        $ref.hide = function () {
+            $element.hide();
+            if ($ref.afterHide != null) {
+                $ref.afterHide();
+            }
+        };
+
+        $ref.afterShow = null;
+        $ref.afterHide = null;
+
+        return $ref;
+    };
+
+    var indication = new (function () {
+        var $ref = {};
+        $ref.main = new BusyIndicator("busy-main");
+        $ref.main.afterShow = function () {
+            $(".veil").show();
+        };
+        $ref.main.afterHide = function () {
+            $(".veil").hide();
+        };
+
+        $ref.app = new BusyIndicator("busy-app");
+        $ref.app.afterHide = function () {
+            $("body div.hidden").removeClass("hidden");
+        };
+
+        return $ref;
+    });
+
+    var opts = {
+        lines: 13, // The number of lines to draw
+        length: 0, // The length of each line
+        width: 2, // The line thickness
+        radius: 10, // The radius of the inner circle
+        corners: 1, // Corner roundness (0..1)
+        rotate: 16, // The rotation offset
+        direction: 1, // 1: clockwise, -1: counterclockwise
+        color: '#00a5ca', // #rgb or #rrggbb
+        speed: 1.3, // Rounds per second
+        trail: 72, // Afterglow percentage
+        shadow: false, // Whether to render a shadow
+        hwaccel: false, // Whether to use hardware acceleration
+        className: 'spinner', // The CSS class to assign to the spinner
+        zIndex: 2e9, // The z-index (defaults to 2000000000)
+        top: -4, // Top position relative to parent in px
+        left: 0 // Left position relative to parent in px
+    };
+    $(".in-busy-centered").spin(opts);
+
+    // Routes initialization.
+    var routes = [
+        new Routing.Routes.NavigationRoute("pages/p1", "Page1.html",
+                            { cacheView: true, isDefault: true, vmFactory: function (callback) { callback(new Page1VM()); }, vmCanLeave: "canLeave", title: "Page #1" }),
+        new Routing.Routes.NavigationRoute("pages/p2/:name/:value", "Page2.html?value={value}", 
+                            { cacheView: false, vmFactory: function (callback) { callback(new Page2VM()); }, onNavigateTo: "onNav", title: "Page #2" }),
+        new Routing.Routes.NavigationRoute("pages/p3", "Page3.html", 
+                            { cacheView: false, vmFactory: function (callback) { callback(new Page3VM()); }, onNavigateTo: "onNav", title: "Page #3" }),
+    ];
+    var router = new Routing.Router();
+    router.init(
+        routes,
+        "views-placeholder",
+        {
+            enableLogging: true,
+            preloadEnabled: true,
+            preloadComplete: function () {
+                indication.app.hide();
+            },
+            beforeNavigation: function () {
+                indication.main.show();
+            },
+            afterNavigation: function () {
+                indication.main.hide();
+            },
+            navigationError: function () {
+                router.navigateBack();
+            }
+        });
+    
+    Routing.ko.setCurrentRouter(router);
+    ko.applyBindings({});
+    router.run();
+</script>
+</body>
+</html>
