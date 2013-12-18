@@ -24,4 +24,7 @@ git commit -sm "[Automated] gh-pages updated to latest sample from master branch
 Write-Host "Returning to 'master' branch..."
 git checkout master
 
+Write-Host "Restorin removed files..."
+git reset --hard
+
 Write-Host "Updating 'gh-pages' ended."
