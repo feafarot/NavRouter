@@ -1,16 +1,27 @@
-Write-Host '~- Running: git checkout gh-pages'
+Write-Host "Swithcing to 'gh-pages' branch..."
 git checkout gh-pages
-Write-Host '~- Running: git checkout master -- sample'
-git checkout master -- sample
-Write-Host '~- Running: Copy-Item "sample\*" ".\" -recurse - force'
-Copy-Item "sample\*" ".\" -recurse - force
-Write-Host '~- Running: Remove-Item "sample" -recurse'
+
+Write-Host 'Obtaining sample from master branch...'
+git checkout master sample
+
+Write-Host "Copying files from 'sample' to root folder..."
+Copy-Item "sample\*" ".\" -recurse -force
+
+Write-Host "Removing 'sample' folder..."
 Remove-Item "sample" -recurse
-Write-Host '~- Running: git add .'
+
+Write-Host "Indexing of changes in git..."
 git add .
-Write-Host '~- Running: git commit -sm "..."'
+
+Write-Host "Commiting changes..."
 git commit -sm "[Automated] gh-pages updated to latest sample from master branch"
+
+#Write-Host "Pushing commit using SSH..."
 #git remote set-url origin git@github.com:feafarot/NavRouter.git
 #git push origin gh-pages:gh-pages
 #git remote set-url origin https://github.com/feafarot/NavRouter.git
-#git checkout master
+
+Write-Host "Returning to 'master' branch..."
+git checkout master
+
+Write-Host "Updating 'gh-pages' ended."
