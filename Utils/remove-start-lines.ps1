@@ -1,0 +1,1 @@
+(Get-Content $args[0] | Select-Object -Skip $args[1]) | Set-Content $args[0]

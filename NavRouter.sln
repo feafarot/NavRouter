@@ -1,37 +1,61 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.20827.3
+VisualStudioVersion = 12.0.30324.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "NavRouter(1)", ".", "{FED6EDDB-93FD-4907-B77E-CF79E7F64E7F}"
-	ProjectSection(WebsiteProperties) = preProject
-		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5"
-		Debug.AspNetCompiler.VirtualPath = "/NavRouter"
-		Debug.AspNetCompiler.PhysicalPath = "..\NavRouter\"
-		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\NavRouter\"
-		Debug.AspNetCompiler.Updateable = "true"
-		Debug.AspNetCompiler.ForceOverwrite = "true"
-		Debug.AspNetCompiler.FixedNames = "false"
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.VirtualPath = "/NavRouter"
-		Release.AspNetCompiler.PhysicalPath = "..\NavRouter\"
-		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\NavRouter\"
-		Release.AspNetCompiler.Updateable = "true"
-		Release.AspNetCompiler.ForceOverwrite = "true"
-		Release.AspNetCompiler.FixedNames = "false"
-		Release.AspNetCompiler.Debug = "False"
-		VWDPort = "51292"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{E8C7E5A0-3B17-4127-8751-D74B1B26A751}"
+	ProjectSection(SolutionItems) = preProject
+		Utils\copy-items.ps1 = Utils\copy-items.ps1
+		Utils\remove-item.ps1 = Utils\remove-item.ps1
+		Utils\remove-start-lines.ps1 = Utils\remove-start-lines.ps1
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NavRouter.Sample", "NavRouter.Sample.csproj", "{8580492B-48FA-407D-A5AE-6A3885EFC5CE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{68C0C29E-0790-4B73-B2E3-7F07041DF03C} = {68C0C29E-0790-4B73-B2E3-7F07041DF03C}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NavRouter.Source", "NavRouter.Source.csproj", "{68C0C29E-0790-4B73-B2E3-7F07041DF03C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{15C8F928-403A-4749-9CCA-68531F1F8401}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compiled", "Compiled", "{929B128B-9E08-4734-9280-27BCE5578F39}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Debug", "Debug", "{EB30D3AF-BC84-44F4-AA2C-5836F3302695}"
+	ProjectSection(SolutionItems) = preProject
+		Bin\Debug\navrouter.d.ts = Bin\Debug\navrouter.d.ts
+		Bin\Debug\navrouter.js = Bin\Debug\navrouter.js
+		Bin\Debug\navrouter.js.map = Bin\Debug\navrouter.js.map
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Release", "Release", "{7B72CB74-2210-41C3-80F9-0D68FF2DDEA3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FED6EDDB-93FD-4907-B77E-CF79E7F64E7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FED6EDDB-93FD-4907-B77E-CF79E7F64E7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8580492B-48FA-407D-A5AE-6A3885EFC5CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8580492B-48FA-407D-A5AE-6A3885EFC5CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8580492B-48FA-407D-A5AE-6A3885EFC5CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8580492B-48FA-407D-A5AE-6A3885EFC5CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68C0C29E-0790-4B73-B2E3-7F07041DF03C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68C0C29E-0790-4B73-B2E3-7F07041DF03C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68C0C29E-0790-4B73-B2E3-7F07041DF03C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68C0C29E-0790-4B73-B2E3-7F07041DF03C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EB30D3AF-BC84-44F4-AA2C-5836F3302695} = {929B128B-9E08-4734-9280-27BCE5578F39}
+		{7B72CB74-2210-41C3-80F9-0D68FF2DDEA3} = {929B128B-9E08-4734-9280-27BCE5578F39}
 	EndGlobalSection
 EndGlobal

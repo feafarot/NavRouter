@@ -47,3 +47,6 @@ _ReSharper*/
 
 #NuGet
 packages/
+
+#Custom
+.ignore/

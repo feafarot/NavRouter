@@ -1,0 +1,1 @@
+Remove-Item -Force -Recurse $args[0]
