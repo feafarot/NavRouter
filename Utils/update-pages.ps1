@@ -4,7 +4,8 @@ Write-Host "Swithcing to 'gh-pages' branch..."
 git checkout gh-pages
 
 Write-Host 'Obtaining sample from master branch...'
-git checkout master sample
+git checkout master Compiled
+git checkout master Sample
 
 Write-Host "Copying files from 'Sample' and 'Compiled' to root folder..."
 Copy-Item "Sample\*" ".\" -recurse -force
