@@ -1,3 +1,5 @@
+cd ..
+
 Write-Host "Swithcing to 'gh-pages' branch..."
 git checkout gh-pages
 
