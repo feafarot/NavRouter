@@ -5,6 +5,7 @@ git checkout gh-pages
 
 Write-Host 'Obtaining sample from master branch...'
 git checkout master Compiled
+git checkout master Scripts
 git checkout master Sample
 
 Write-Host "Copying files from 'Sample' and 'Compiled' to root folder..."
@@ -31,7 +32,7 @@ git push origin gh-pages:gh-pages
 Write-Host "Returning to 'master' branch..."
 git checkout master
 
-#Write-Host "Restorin removed files..."
-#git reset --hard
+Write-Host "Restorin removed files..."
+git reset --hard
 
 Write-Host "Updating 'gh-pages' ended."
