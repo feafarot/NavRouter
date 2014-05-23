@@ -14,7 +14,7 @@ Copy-Item "Sample\*" ".\" -recurse -force
 Write-Host "Removing 'Sample' folder..."
 Remove-Item "Sample" -recurse
 
-Write-Host "Patching paths in 'the index.html'..."
+Write-Host "Patching paths in the 'index.html'..."
 (Get-Content index.html) | Foreach-Object {$_ -replace "../Scripts", "Scripts"} | Out-File index.html
 (Get-Content index.html) | Foreach-Object {$_ -replace "../Compiled", "Compiled"} | Out-File index.html
 
