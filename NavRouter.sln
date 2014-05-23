@@ -23,6 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{15C8F9
 		.gitignore = .gitignore
 		LICENSE = LICENSE
 		README.md = README.md
+		WE-Markdown.css = WE-Markdown.css
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compiled", "Compiled", "{929B128B-9E08-4734-9280-27BCE5578F39}"
