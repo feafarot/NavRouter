@@ -5,6 +5,7 @@
         private prevHash: string;
         private preventNextEvent: boolean = false;
         private storedHash: string;
+        private legalHash: string;
         private pending: boolean = false;
         private cancellingPrev: boolean = false;
         private callCount: number = 0;
@@ -156,7 +157,7 @@
 
             if (this.preventNextEvent)
             {
-                if (this.prevHash != window.location.hash)
+                if (this.hash != window.location.hash)
                 {
                     if (this.forwardingCount == 0)
                     {

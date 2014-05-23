@@ -1,4 +1,4 @@
-﻿declare module routing {
+declare module routing {
     class HashService {
         private prevHash;
         private preventNextEvent;

@@ -278,15 +278,14 @@ module routing
             return this;
         }
         //#endregion
-
-
+        
         //#region Utils
         getRoute(routeLink: string): routes.Route
         {
             var delegate = (x: routes.Route): boolean =>
             {
                 var path2 = routeLink.toString().replace(this.hashSymbol, "");
-                var result = this.isMatches(x.pattern, path2);
+                var result = this.isMatchesV2(x.pattern, path2);
                 return result;
             };
             var res: routes.Route = null;
@@ -295,6 +294,7 @@ module routing
                 if (delegate(this.allRoutes[i]))
                 {
                     res = this.allRoutes[i];
+                    break;
                 }
             }
 
@@ -322,6 +322,43 @@ module routing
             }
 
             return result;
+        }
+
+        isMatchesV2(path1: string, path2: string): boolean
+        {
+            var path1Parts = this.cleanPath(path1).split("/"),
+                path2Parts = this.cleanPath(path2).split("/");
+            if (path1Parts.length < path2Parts.length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < path1Parts.length; i++)
+            {
+                if (path1Parts[i].match(/^\{\?[^\?]+\}$/))
+                {
+                    continue;
+                }
+
+                if (path1Parts[i].match(/^\{([^\?])+\}$/) && path2Parts[i])
+                {
+                    continue;
+                }
+
+                if (path1Parts[i] == path2Parts[i])
+                {
+                    continue;
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+        private cleanPath(path: string): string
+        {
+            return path.replace(/(\/\/+)/, "/").replace(/(\/+)$/, "").replace(/^(\/+)/, "");
         }
 
         private getPathForRoute(route: routes.Route): string
@@ -388,36 +425,14 @@ module routing
         private createCurrentRoute(): KnockoutObservable<routes.Route>
         {
             return ko.observable<routes.Route>(null);
-            //if (ko && ko.observable)
-            //{
-            //} // Strong dependency on knockout
-            //else
-            //{
-            //    return new (function ()
-            //    {
-            //        var _currentRoute = null;
-            //        return function (value)
-            //        {
-            //            if (isUndefined(value))
-            //            {
-            //                return _currentRoute;
-            //            }
-            //            else
-            //            {
-            //                _currentRoute = value;
-            //                return _currentRoute;
-            //            }
-            //        }
-            //    })();
-            //}
         }
 
-        private raiseOnNavigateTo(route: routes.NavigationRoute, context: INavigationContext): void
+        private raiseOnNavigatedTo(route: routes.NavigationRoute, context: INavigationContext): void
         {
-            if (route.onNavigateTo != null && (!this.isRedirecting || !this.preventRaisingNavigateTo))
+            if (route.onNavigatedTo != null && (!this.isRedirecting || !this.preventRaisingNavigateTo))
             {
                 var params = context.params;
-                route.currentVM[route.onNavigateTo](params, this.currentPayload);
+                route.onNavigatedTo(params, this.currentPayload);
                 this.currentPayload = null;
             }
         }
@@ -431,17 +446,27 @@ module routing
             var params: any = {};
             var patternParts = route.pattern.split("/");
             var pathParts = hash.replace(this.hashSymbol, "").split("/");
-            if (pathParts.length != patternParts.length)
-            {
-                throw new Error("Invalid path. Unable to create navigation context.");
-            }
+            //if (pathParts.length != patternParts.length)
+            //{
+            //    throw new Error("Invalid path. Unable to create navigation context.");
+            //}
 
             for (var i = 0; i < patternParts.length; i++)
             {
-                if (patternParts[i].toString().match(/^:.+/))
+                if (patternParts[i].toString().match(/^\{[^\?]+\}$/))
                 {
-                    var paramName = patternParts[i].toString().replace(":", "");
+                    var paramName = patternParts[i].toString().replace("{", "").replace("}", "");
                     params[paramName] = pathParts[i];
+                }
+
+                if (patternParts[i].toString().match(/^\{\?[^\?]+\}$/))
+                {
+                    var paramName = patternParts[i].toString().replace("{?", "").replace("}", "");
+                    params[paramName] = pathParts[i];
+                    //if (!pathParts[i])
+                    //{
+                    //    break;
+                    //}
                 }
             }
 
@@ -521,6 +546,10 @@ module routing
             if (croute && croute instanceof routes.NavigationRoute)
             {
                 (<routes.NavigationRoute>croute).state = routes.LoadingState.canceled;
+                if ((<routes.NavigationRoute>croute).onNavigatedFrom)
+                {
+                    (<routes.NavigationRoute>croute).onNavigatedFrom();
+                }
             }
 
             routeHandler.handler(context);
@@ -627,7 +656,7 @@ module routing
                         existing.show();
                         if (!preventRaisingNavigateToCache)
                         { // This mean, that on navigation to the cache onNavigateTo shouldn't be called
-                            this.raiseOnNavigateTo(routeToMap, context);
+                            this.raiseOnNavigatedTo(routeToMap, context);
                         }
 
                         completeNavigation();
@@ -664,7 +693,7 @@ module routing
                                     existing.html(response);
                                     if (routeToMap.vmFactory != null)
                                     { // View contains view model
-                                        var factory = eval(routeToMap.vmFactory);
+                                        var factory = routeToMap.vmFactory;
                                         factory((instance) =>
                                         {
                                             ko.applyBindings(instance, existing.get(0));
@@ -672,7 +701,7 @@ module routing
                                             jelem.children().hide();
                                             if (!preventRaisingNavigateToCache)
                                             {
-                                                this.raiseOnNavigateTo(routeToMap, context);
+                                                this.raiseOnNavigatedTo(routeToMap, context);
                                             }
 
                                             existing.show();
@@ -685,7 +714,7 @@ module routing
                                         jelem.children().hide();
                                         if (!preventRaisingNavigateToCache)
                                         {
-                                            this.raiseOnNavigateTo(routeToMap, context);
+                                            this.raiseOnNavigatedTo(routeToMap, context);
                                         }
 
                                         existing.show();
@@ -719,14 +748,14 @@ module routing
                             if (routeToMap.vmFactory != null)
                             { // View contains view model
                                 existing = $("[data-view=\"" + routeToMap.pattern + "\"]", jelem);
-                                var factory = eval(routeToMap.vmFactory);
+                                var factory = routeToMap.vmFactory;
                                 factory((instance) =>
                                 {
                                     ko.applyBindings(instance, existing.get(0));
                                     routeToMap.currentVM = instance;
                                     if (!preventRaisingNavigateToCache)
                                     {
-                                        this.raiseOnNavigateTo(routeToMap, context);
+                                        this.raiseOnNavigatedTo(routeToMap, context);
                                     }
 
                                     completeNavigation();
@@ -735,7 +764,7 @@ module routing
                             { // View without view model
                                 if (!preventRaisingNavigateToCache)
                                 {
-                                    this.raiseOnNavigateTo(routeToMap, context);
+                                    this.raiseOnNavigatedTo(routeToMap, context);
                                 }
 
                                 existing.show();

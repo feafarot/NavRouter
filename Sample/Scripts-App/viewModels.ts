@@ -14,7 +14,7 @@
         }
     }
 
-    export class Page1VM extends BaseVM
+    export class Page1VM extends BaseVM implements routing.routes.INavigationAware
     {
         currentCallback: any;
         num: KnockoutObservable<string> = ko.observable("0");
@@ -26,31 +26,31 @@
             super();
         }
 
-        showMagicNumber()
+        showMagicNumber(): void
         {
             this.num(Math.floor(Math.random() * 100).toString());
         }
 
-        canLeave(callback): void
+        canNavigateFrom(callback: (allow: boolean) => void): void
         {
             this.currentCallback = callback;
             this.confirmationVisible(true);
         }
 
-        confirmYes = function ()
+        confirmYes(): void
         {
             this.currentCallback(true);
             this.confirmationVisible(false);
         }
 
-        confirmNo = function ()
+        confirmNo(): void
         {
             this.currentCallback(false);
             this.confirmationVisible(false);
         }
     }
 
-    export class Page2VM extends BaseVM
+    export class Page2VM extends BaseVM implements routing.routes.INavigationAware
     {
         num: KnockoutObservable<string> = ko.observable("0");
         params: KnockoutObservable<any> = ko.observable({});
@@ -60,18 +60,18 @@
             super();
         }
 
-        showMagicNumber()
+        showMagicNumber(): void
         {
             this.num("P2:" + Math.floor(Math.random() * 100));
         }
         
-        onNav (params, payload)
+        onNavigatedTo(params, payload): void
         {
             this.params(params);
         }
     }
 
-    export class Page3VM extends BaseVM
+    export class Page3VM extends BaseVM implements routing.routes.INavigationAware
     {
         num: KnockoutObservable<string> = ko.observable("0");
         params: KnockoutObservable<any> = ko.observable({});
@@ -82,14 +82,19 @@
             super();
         }
 
-        showMagicNumber()
+        showMagicNumber(): void
         {
             this.num("P3:" + Math.floor(Math.random() * 11));
         }
 
-        onNav(params, payload)
+        onNavigatedTo(params, payload): void
         {
             this.payload(ko.toJSON(payload));
+        }
+
+        onNavigatedFrom(): void
+        {
+            alert("Page 3 Left");
         }
     }
 }

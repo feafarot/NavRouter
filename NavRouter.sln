@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30324.0
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{E8C7E5A0-3B17-4127-8751-D74B1B26A751}"
 	ProjectSection(SolutionItems) = preProject
@@ -29,12 +29,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compiled", "Compiled", "{92
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Debug", "Debug", "{EB30D3AF-BC84-44F4-AA2C-5836F3302695}"
 	ProjectSection(SolutionItems) = preProject
-		Bin\Debug\navrouter.d.ts = Bin\Debug\navrouter.d.ts
-		Bin\Debug\navrouter.js = Bin\Debug\navrouter.js
-		Bin\Debug\navrouter.js.map = Bin\Debug\navrouter.js.map
+		Compiled\Debug\navrouter.d.ts = Compiled\Debug\navrouter.d.ts
+		Compiled\Debug\navrouter.js = Compiled\Debug\navrouter.js
+		Compiled\Debug\navrouter.js.map = Compiled\Debug\navrouter.js.map
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Release", "Release", "{7B72CB74-2210-41C3-80F9-0D68FF2DDEA3}"
+	ProjectSection(SolutionItems) = preProject
+		Compiled\Release\navrouter.d.ts = Compiled\Release\navrouter.d.ts
+		Compiled\Release\navrouter.js = Compiled\Release\navrouter.js
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

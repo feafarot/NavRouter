@@ -61,28 +61,34 @@
 
     export interface NavigationRouteOptions extends RouteOptions
     {
-        vmCanLeave?: string;
         currentVM?: any;
         cacheView?: boolean;
-        onNavigateTo?: string;
         vmFactory?: any;
         title?: string;
         toolbarId?: string;
     }
 
-    interface NavigationInfo
+    export interface NavigationInfo
     {
         targetRoute: routes.Route;
         forceReloadOnNavigation: boolean;
         forceNavigationInCache: boolean;
     }
 
+    export interface INavigationAware
+    {
+        onNavigatedTo?: (params: any, payload?: any) => void;
+        canNavigateFrom?: (callback, navOptions: NavigationInfo) => void;
+        onNavigatedFrom?: (newNavOptions: NavigationInfo) => void;
+    }
+
     export class NavigationRoute extends Route
     {
         viewPath: string;
-        currentVM: any;
+        currentVM: INavigationAware;
         cacheView: boolean;
-        onNavigateTo: string;
+        onNavigatedTo: (params: any, payload?: any) => void;
+        onNavigatedFrom: () => void;
         vmFactory: any;
         title: string;
         toolbarId: string;
@@ -103,30 +109,41 @@
             {
                 this.cacheView = true;
                 this.vmFactory = null;
-                this.onNavigateTo = null;
+                this.onNavigatedTo = null;
                 this.title = null;
                 this.toolbarId = null;
                 this.state = LoadingState.complete;
             }
             else
             {
-                if (options.vmCanLeave)
+                if (options.vmFactory)
                 {
-                    options.canLeave = (callback, navOptions: NavigationInfo) => 
+                    var factory = eval(options.vmFactory);
+                    this.vmFactory = (callback: (instance: any) => void) =>
                     {
-                        if (this.currentVM && this.currentVM[options.vmCanLeave])
+                        factory((instance: any) =>
                         {
-                            return this.currentVM[options.vmCanLeave](callback, navOptions);
-                        }
+                            this.currentVM = instance;
+                            this.onNavigatedTo = instance.onNavigatedTo || null;
+                            this.onNavigatedFrom = instance.onNavigatedFrom || null;
+                            this.canLeave = (callback, navOptions: NavigationInfo) =>
+                            {
+                                if (instance.canNavigateFrom)
+                                {
+                                    instance.canNavigateFrom(callback, navOptions);
+                                    return;
+                                }
 
-                        return true;
-                    };
+                                callback(true);
+                            };
+
+                            callback(instance);
+                        });
+                    }
                 }
 
                 this.toolbarId = options.toolbarId;
                 this.cacheView = options.cacheView == undefined ? true : options.cacheView;
-                this.vmFactory = options.vmFactory || null;
-                this.onNavigateTo = options.onNavigateTo || null;
                 this.title = options.title || null;
                 this.state = LoadingState.complete;
             }

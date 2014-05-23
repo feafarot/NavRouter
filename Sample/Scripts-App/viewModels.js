@@ -25,22 +25,24 @@ var viewModels;
             this.num = ko.observable("0");
             this.confirmationVisible = ko.observable(false);
             this.forPayload = ko.observable({ text: "Hello from payload!" });
-            this.confirmYes = function () {
-                this.currentCallback(true);
-                this.confirmationVisible(false);
-            };
-            this.confirmNo = function () {
-                this.currentCallback(false);
-                this.confirmationVisible(false);
-            };
         }
         Page1VM.prototype.showMagicNumber = function () {
             this.num(Math.floor(Math.random() * 100).toString());
         };
 
-        Page1VM.prototype.canLeave = function (callback) {
+        Page1VM.prototype.canNavigateFrom = function (callback) {
             this.currentCallback = callback;
             this.confirmationVisible(true);
+        };
+
+        Page1VM.prototype.confirmYes = function () {
+            this.currentCallback(true);
+            this.confirmationVisible(false);
+        };
+
+        Page1VM.prototype.confirmNo = function () {
+            this.currentCallback(false);
+            this.confirmationVisible(false);
         };
         return Page1VM;
     })(BaseVM);
@@ -57,7 +59,7 @@ var viewModels;
             this.num("P2:" + Math.floor(Math.random() * 100));
         };
 
-        Page2VM.prototype.onNav = function (params, payload) {
+        Page2VM.prototype.onNavigatedTo = function (params, payload) {
             this.params(params);
         };
         return Page2VM;
@@ -76,11 +78,14 @@ var viewModels;
             this.num("P3:" + Math.floor(Math.random() * 11));
         };
 
-        Page3VM.prototype.onNav = function (params, payload) {
+        Page3VM.prototype.onNavigatedTo = function (params, payload) {
             this.payload(ko.toJSON(payload));
+        };
+
+        Page3VM.prototype.onNavigatedFrom = function () {
+            alert("Page 3 Left");
         };
         return Page3VM;
     })(BaseVM);
     viewModels.Page3VM = Page3VM;
 })(viewModels || (viewModels = {}));
-//# sourceMappingURL=viewModels.js.map
