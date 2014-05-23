@@ -10,7 +10,6 @@ git checkout master Sample
 
 Write-Host "Copying files from 'Sample' and 'Compiled' to root folder..."
 Copy-Item "Sample\*" ".\" -recurse -force
-Copy-Item "Compiled\*" ".\" -recurse -force
 
 Write-Host "Removing 'Sample' folder..."
 Remove-Item "Sample" -recurse
