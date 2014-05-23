@@ -14,7 +14,7 @@ Write-Host "Removing 'Sample' folder..."
 Remove-Item "Sample" -recurse
 
 Write-Host "Indexing of changes in git..."
-git add .
+git add . -u
 
 Write-Host "Commiting changes..."
 git commit -sm "[Automated] gh-pages updated to latest sample from master branch"
