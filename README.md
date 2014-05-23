@@ -1,12 +1,12 @@
 ## NavRouter
 
 ### General information
-Current version **0.9.11**
+Current version **1.0.0**
 
 Licensed under **MIT** ([License Text](http://opensource.org/licenses/MIT))
 
 Installing via NuGet:
-> PM> Install-Package **NavRouter.Complete**
+> PM> Install-Package **NavRouter**
 
 ### Using
 _Coming soon..._
