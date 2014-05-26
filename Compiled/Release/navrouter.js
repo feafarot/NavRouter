@@ -545,7 +545,7 @@ var routing;
             this.routes.push(routeToMap);
             if (routeToMap.isDefault) {
                 this.defaultRoute = routeToMap;
-                this.defaultPath = this.getPathForRoute(routeToMap);
+                this.defaultPath = this.hashSymbol + this.getPathForRoute(routeToMap);
             }
 
             this.initRoute(routeToMap);
@@ -660,7 +660,7 @@ var routing;
                         throw new Error("Route '" + route.pattern + "' has invalid configuration of child elements.");
                     }
 
-                    return this.getPathForRoute(defaultChild);
+                    return route.pattern + "/" + this.getPathForRoute(defaultChild);
                 }
 
                 return route.pattern;

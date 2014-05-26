@@ -89,3 +89,4 @@ var viewModels;
     })(BaseVM);
     viewModels.Page3VM = Page3VM;
 })(viewModels || (viewModels = {}));
+//# sourceMappingURL=viewModels.js.map
