@@ -18,7 +18,7 @@ Initialization and startup of router:
         beforeNavigationHandler: function () { },    // Global before navigation handler.
         afterNavigationHandler: function () { },     // Global after navigation handler.
         navigationErrorHandler: function () { },     // Global navigation error handler.
-        enableLogging: true                         // Loggin router activity into console output.
+        enableLogging: true                          // Loggin router activity into console output.
     };
     var router = new routing.Router(
         "container-id", // ID of element in which will be loaded views.
@@ -49,6 +49,7 @@ Defining route with options and view model:
         var booksVM = new BooksViewModel(); // View model in knokcout meaning.
         callback(booksVM);                  // callback shoud be used. Do not use "return" it will not work.
     };
+    
     var vmRouteOptions = {
             isDefault: true,    // Only one route must have IsDefault flag set to "true".
                                 // This flag means that this route will be chosen if url doesn't match with any other routes.
@@ -58,9 +59,35 @@ Defining route with options and view model:
             vmFactory: booksViewVMFactoryMethod // View model factory method reference.
                                 // This method will take 1 argument - function that should be called with view model instance object as argument.
         };
-    var vmRoute = new routing.routes.NavigationRoute(
+        
+    var booksVMRoute = new routing.routes.NavigationRoute(
         "books/view/{bookId}/{?page}", // Advanced parameters where "bookId" is required paramter and "page" is optional.
                                        // How to use this parameters described below.
         "views/books-view.html",
         vmRouteOptions);
 ```
+
+View model & navigation:
+
+```javascript
+    function BooksViewModel () {
+        var _this = this;
+        _this.onNavigatedTo = function (params, payload) {
+            // Triggers after navigation on view.
+            // In case with "booksVMRoute" from previous sample "params" argument will contains "bookId" 
+            // and "page" fields where "page" field can be filled with "null".
+            
+            // "payload" serve to send big objects with navigation.
+        }
+        _this.canNavigateFrom = function (callback) {
+            // Triggers when user try to navigate from current page.
+            // "callback" argument is function that take 1 boolean argumen.
+            // So if you male call "callback(false);" it will cancell navigation and roll back url to current,
+            // to continue navigation you should call "callback" with "true" argument.
+        }
+        _this.onNavigatedFrom = function () {
+            // Triggers when system already left this page.
+        }
+    }
+```
+
