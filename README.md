@@ -67,6 +67,8 @@ Defining route with options and view model:
         vmRouteOptions);
 ```
 
+### Interactions with View Models and navigation
+
 View model & navigation:
 
 ```javascript
@@ -91,3 +93,20 @@ View model & navigation:
     }
 ```
 
+Perfom navigation with html knockout binding (Simple example, advanced will be added soon)
+
+```html
+    <a data-bind="navigate: 'books/view/JRRT-172/14', activeClass: 'selected'">Lates book</a>
+    <!-- "activeClass" binding will set provided class name when route will be active. -->
+```
+
+Perfom navigation from code
+
+```javascript
+    var navigateOptions = {
+        payload: new Array(),           // Any object to send with navigation.
+        forceReloadOnNavigation: true,  // Force to ignore "cacheView" flag to reload page.
+        forceNavigationInCache: false,  // Force to ignore "cacheView" flag to not reload page.
+    };
+    router.navigateTo("books/view/JRRT-172/14", navigateOptions);
+```
