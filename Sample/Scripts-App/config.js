@@ -14,13 +14,10 @@ var router = new routing.Router("views-placeholder", {
     enableLogging: true,
     preloadEnabled: true,
     preloadComplete: function () {
-        //indication.app.hide();
     },
     beforeNavigation: function () {
-        //indication.main.show();
     },
     afterNavigation: function () {
-        //indication.main.hide();
     },
     navigationError: function () {
         router.navigateBack();
@@ -29,4 +26,3 @@ var router = new routing.Router("views-placeholder", {
 routing.knockout.setCurrentRouter(router);
 ko.applyBindings({});
 router.run();
-//# sourceMappingURL=config.js.map

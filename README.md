@@ -1,4 +1,4 @@
-# NavRouter [1.0.1]
+# NavRouter [1.0.2]
 
 ## General information
 

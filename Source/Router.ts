@@ -383,7 +383,7 @@ module routing
                         throw new Error("Route '" + route.pattern + "' has invalid configuration of child elements.");
                     }
 
-                    return route.pattern + "/" + this.getPathForRoute(defaultChild);
+                    return this.getPathForRoute(defaultChild);
                 }
 
                 return route.pattern;
