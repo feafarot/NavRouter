@@ -1,4 +1,4 @@
-﻿/// <reference path="../../Scripts/typings/jquery/jquery.d.ts" />
+/// <reference path="../../Scripts/typings/jquery/jquery.d.ts" />
 /// <reference path="../../Scripts/typings/knockout/knockout.d.ts" />
 declare module routing {
     class HashService {
@@ -10,13 +10,13 @@ declare module routing {
         private cancellingPrev;
         private callCount;
         private forwardingCount;
-        public hash: string;
-        public on_changing: (hash: string, callback: (cancelNavigation: boolean) => void) => void;
-        public on_changed: (hash: string) => void;
-        public on_cancelledByUrl: () => void;
-        public setHash(hash: any): void;
-        public setHashAsReplace(hash: any): void;
-        public start(): void;
+        hash: string;
+        on_changing: (hash: string, callback: (cancelNavigation: boolean) => void) => void;
+        on_changed: (hash: string) => void;
+        on_cancelledByUrl: () => void;
+        setHash(hash: any): void;
+        setHashAsReplace(hash: any): void;
+        start(): void;
         private lock();
         private release();
         private changingCallback(cancelNavigation);
@@ -31,15 +31,15 @@ declare module routing {
         info(message: string): void;
     }
     class DefaultRouterLogger implements ILogger {
-        public warning(message: string): void;
-        public error(message: string): void;
-        public info(message: string): void;
+        warning(message: string): void;
+        error(message: string): void;
+        info(message: string): void;
         private write(message);
     }
     class SilentLogger {
-        public warning(message: string): void;
-        public error(message: string): void;
-        public info(message: string): void;
+        warning(message: string): void;
+        error(message: string): void;
+        info(message: string): void;
     }
 }
 declare module routing.routes {
@@ -49,14 +49,14 @@ declare module routing.routes {
         canLeave?: (callback: (allow: boolean) => void, navOptions: any) => void;
     }
     class Route {
-        public pattern: string;
-        public parrentRoute: Route;
-        public isDefault: boolean;
-        public canLeave: (callback: (allow: boolean) => void, navOptions: any) => void;
+        pattern: string;
+        parrentRoute: Route;
+        isDefault: boolean;
+        canLeave: (callback: (allow: boolean) => void, navOptions: any) => void;
         constructor(routePattern: string, options: RouteOptions);
     }
     class VirtualRoute extends Route {
-        public childRoutes: Route[];
+        childRoutes: Route[];
         constructor(routePattern: string, childRoutes: Route[], options: RouteOptions);
     }
     enum LoadingState {
@@ -72,31 +72,44 @@ declare module routing.routes {
         toolbarId?: string;
     }
     interface NavigationInfo {
-        targetRoute: Route;
+        targetRoute: routes.Route;
         forceReloadOnNavigation: boolean;
         forceNavigationInCache: boolean;
     }
     interface INavigationAware {
         onNavigatedTo?: (params: any, payload?: any) => void;
-        canNavigateFrom?: (callback: any, navOptions: NavigationInfo) => void;
+        canNavigateFrom?: (callback, navOptions: NavigationInfo) => void;
         onNavigatedFrom?: (newNavOptions: NavigationInfo) => void;
     }
     class NavigationRoute extends Route {
-        public viewPath: string;
-        public currentVM: INavigationAware;
-        public cacheView: boolean;
-        public onNavigatedTo: (params: any, payload?: any) => void;
-        public onNavigatedFrom: () => void;
-        public vmFactory: any;
-        public title: string;
-        public toolbarId: string;
-        public state: LoadingState;
+        viewPath: string;
+        currentVM: INavigationAware;
+        cacheView: boolean;
+        onNavigatedTo: (params: any, payload?: any) => void;
+        onNavigatedFrom: () => void;
+        vmFactory: any;
+        title: string;
+        toolbarId: string;
+        state: LoadingState;
         constructor(routePattern: string, viewPath: string, options: NavigationRouteOptions);
     }
 }
 declare module routing.utils {
     function getType(obj: any): string;
     function getHash(path: any): string;
+    function newGuid(): string;
+    function filterArray<T>(array: Array<T>, predicate: (element: T) => boolean): Array<T>;
+    class Event<TArgs> {
+        private handlers;
+        constructor();
+        subscribe(handler: (args?: TArgs) => void): string;
+        unsubscribe(handler: (args?: TArgs) => void): void;
+        unsubscribeByToken(handlerToken: string): void;
+        add(handler: (args?: TArgs) => void): string;
+        remove(handler: (args?: TArgs) => void): void;
+        removeByToken(handlerToken: string): void;
+        raise(args?: TArgs): void;
+    }
 }
 declare module routing {
     interface INavigationContext {
@@ -111,10 +124,10 @@ declare module routing {
         enableLogging?: boolean;
     }
     class Router {
-        public initialized: boolean;
-        public routes: routes.Route[];
-        public currentRoute: KnockoutObservable<routes.Route>;
-        public history: string[];
+        initialized: boolean;
+        routes: routes.Route[];
+        currentRoute: KnockoutObservable<routes.Route>;
+        history: string[];
         private hashSymbol;
         private defaultPath;
         private currentHash;
@@ -140,21 +153,21 @@ declare module routing {
         private navigationErrorHandler;
         private cancelledByUrlHandler;
         constructor(mainContainerId: string, options?: IRouterInitOptions, routesToMap?: routes.Route[]);
-        public navigateTo(path: string, options?: any): void;
-        public navigateBack(): void;
-        public navigateBackInCache(): void;
-        public navigateHome(): void;
-        public getHashSymbol(): string;
-        public cancelledByUrl(handler: any): void;
-        public refreshCurrentRoute(): void;
-        public registerRoute(routeToMap: routes.Route): Router;
-        public registerRoutes: (routesToMap: routes.Route[]) => void;
-        public setLogger(logger: ILogger): Router;
-        public init: (routes: any, mainContainerId: any, options: any) => any;
-        public run(): Router;
-        public getRoute(routeLink: string): routes.Route;
-        public isMatches(path1: string, path2: string): boolean;
-        public isMatchesV2(path1: string, path2: string): boolean;
+        navigateTo(path: string, options?: any): void;
+        navigateBack(): void;
+        navigateBackInCache(): void;
+        navigateHome(): void;
+        getHashSymbol(): string;
+        cancelledByUrl(handler: any): void;
+        refreshCurrentRoute(): void;
+        registerRoute(routeToMap: routes.Route): Router;
+        registerRoutes: (routesToMap: routes.Route[]) => void;
+        setLogger(logger: ILogger): Router;
+        init: (routes: any, mainContainerId: any, options: any) => any;
+        run(): Router;
+        getRoute(routeLink: string): routes.Route;
+        isMatches(path1: string, path2: string): boolean;
+        isMatchesV2(path1: string, path2: string): boolean;
         private cleanPath(path);
         private getPathForRoute(route);
         private getCompletePath(path, params);

@@ -21,9 +21,70 @@ module routing.utils
         }
 
         var matches = path.match(/^[^#]*(#.+)$/);
-        var hash = matches ? matches[1] : '';
+        var hash = matches ? matches[1] : "";
         return hash;
     };
+
+    export function newGuid(): string {
+        var d = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,(c) => {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
+    };
+
+    export function filterArray<T>(array: Array<T>, predicate: (element: T) => boolean): Array<T> {
+        var filtred = new Array<T>();
+        for (var i in array) {
+            var el = array[i];
+            if (predicate(el)) {
+                filtred.push(el);
+            }
+        }
+
+        return filtred;
+    }
+
+    export class Event<TArgs> {
+        private handlers: Array<{ token: string; handler: (args?: TArgs) => void; }> = [];
+
+        constructor() {
+        }
+
+        subscribe(handler: (args?: TArgs) => void): string {
+            var guid = newGuid();
+            this.handlers.push({ token: guid, handler: handler });
+            return guid;
+        }
+
+        unsubscribe(handler: (args?: TArgs) => void): void {
+            this.handlers = filterArray(this.handlers, (x) => { return x.handler !== handler });
+        }
+
+        unsubscribeByToken(handlerToken: string): void {
+            this.handlers = filterArray(this.handlers, (x) => { return x.token !== handlerToken });
+        }
+
+        add(handler: (args?: TArgs) => void): string {
+            return this.subscribe(handler);
+        }
+
+        remove(handler: (args?: TArgs) => void): void {
+            this.unsubscribe(handler);
+        }
+
+        removeByToken(handlerToken: string): void {
+            this.unsubscribeByToken(handlerToken);
+        }
+
+        raise(args?: TArgs): void {
+            for (var i in this.handlers) {
+                this.handlers[i].handler(args);
+            }
+        }
+    }
 }
 
 module routing

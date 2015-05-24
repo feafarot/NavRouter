@@ -46,12 +46,6 @@
         }
     };
 
-    //function FuncRoute(routePattern, func, options)
-    //{
-    //    this.func = func || null;
-    //    return $.extend(this, new Route(routePattern, options));
-    //}
-
     export enum LoadingState
     {
         canceled,
