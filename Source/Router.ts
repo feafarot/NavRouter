@@ -4,19 +4,15 @@
 /// <reference path="../Scripts/typings/jquery/jquery.d.ts" />
 /// <reference path="../Scripts/typings/knockout/knockout.d.ts" />
 
-module routing.utils
-{
-    export function getType(obj: any): string
-    {
+module routing.utils {
+    export function getType(obj: any): string {
         var funcNameRegex = /function (.+)\(/;
         var results = (funcNameRegex).exec((obj).constructor.toString());
         return (results && results.length > 1) ? results[1] : "";
     };
 
-    export function getHash(path: any): string
-    {
-        if (typeof path != "String" && path.toString != "undefined")
-        {
+    export function getHash(path: any): string {
+        if (typeof path != "String" && path.toString != "undefined") {
             path = path.toString();
         }
 
@@ -27,7 +23,7 @@ module routing.utils
 
     export function newGuid(): string {
         var d = new Date().getTime();
-        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,(c) => {
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
             var r = (d + Math.random() * 16) % 16 | 0;
             d = Math.floor(d / 16);
             return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
@@ -49,9 +45,6 @@ module routing.utils
 
     export class Event<TArgs> {
         private handlers: Array<{ token: string; handler: (args?: TArgs) => void; }> = [];
-
-        constructor() {
-        }
 
         subscribe(handler: (args?: TArgs) => void): string {
             var guid = newGuid();
@@ -87,42 +80,41 @@ module routing.utils
     }
 }
 
-module routing
-{
-    class RouteHandler
-    {
+module routing {
+    class RouteHandler {
         pattern: string;
         handler: (context: INavigationContext) => void;
 
-        constructor(pattern: string, handler: (context: INavigationContext) => void)
-        {
+        constructor(pattern: string, handler: (context: INavigationContext) => void) {
             this.pattern = pattern || null;
             this.handler = handler || null;
         }
     };
 
-    export interface INavigationContext
-    {
+    export interface INavigationContext {
         associeatedRoute: routes.Route;
         path: string;
         params?: any;
     }
 
-    export interface IRouterInitOptions
-    {
+    export interface IRouterInitOptions {
         //preloadEnabled: boolean; // Not implemented
-        beforeNavigationHandler?: () => void;
-        afterNavigationHandler?: () => void;
-        navigationErrorHandler?: () => void;
+        //beforeNavigationHandler?: () => void;
+        //afterNavigationHandler?: () => void;
+        //navigationErrorHandler?: () => void;
         enableLogging?: boolean;
     }
 
-    export class Router
-    {
+    export class Router {
         initialized: boolean = false;
         routes: routes.Route[] = new Array<routes.Route>();
         currentRoute: KnockoutObservable<routes.Route> = this.createCurrentRoute();
         history: string[] = new Array<string>();
+
+        onBeforeNavigation: utils.Event<any> = new utils.Event<any>();
+        onAfterNavigation: utils.Event<any> = new utils.Event<any>();
+        onNavigationError: utils.Event<any> = new utils.Event<any>();
+        onCancelledByUrl: utils.Event<any> = new utils.Event<any>();
 
         private hashSymbol: string = "#!/";
         private defaultPath: string = "";
@@ -147,114 +139,91 @@ module routing
         private isRedirecting: boolean = false;
         private preventRaisingNavigateTo: boolean = false;
 
-        private beforeNavigationHandler: () => void = null;
-        private afterNavigationHandler: () => void = null;
-        private navigationErrorHandler: () => void = null;
-        private cancelledByUrlHandler: () => void = null;
-
-        constructor(mainContainerId: string, options?: IRouterInitOptions, routesToMap?: routes.Route[])
-        {
+        constructor(mainContainerId: string, options?: IRouterInitOptions, routesToMap?: routes.Route[]) {
             var enableLogging;
             this.hashService.on_changing = this.hashChanginHandler;
             this.hashService.on_changed = this.hashChangedHandler;
             this.hashService.on_cancelledByUrl = this.hashChangeCancelledHandler;
 
-            if (options)
-            {
+            if (options) {
                 //this.forceCaching = options.preloadEnabled || false; // Not Implemented
                 //this.onPreloadComplete = options.preloadComplete || null;
-                this.beforeNavigationHandler = options.beforeNavigationHandler || null;
-                this.afterNavigationHandler = options.afterNavigationHandler || null;
-                this.navigationErrorHandler = options.navigationErrorHandler || null;
+                //this.beforeNavigationHandler = options.beforeNavigationHandler || null;
+                //this.afterNavigationHandler = options.afterNavigationHandler || null;
+                //this.navigationErrorHandler = options.navigationErrorHandler || null;
                 enableLogging = options.enableLogging || true;
             }
 
             this.currentLogger = enableLogging ? new DefaultRouterLogger() : new SilentLogger();
             this.containerId = mainContainerId;
             this.initialized = true;
-            if (routesToMap)
-            {
+            if (routesToMap) {
                 this.registerRoutes(routesToMap);
             }
 
             //this.currentLogger.info("Initialized.");
         }
-        
-        navigateTo(path: string, options?: any): void
-        {
+
+        navigateTo(path: string, options?: any): void {
             var actualPath = path,
                 relRoute = this.getRoute(path),
                 removeCurrentHistory = false;
 
-            if (options)
-            {
+            if (options) {
                 this.currentPayload = options.payload || null;
                 this.forceReloadOnNavigation = options.forceReload || false;
                 this.forceNavigationInCache = options.forceNavigationInCache || false;
                 removeCurrentHistory = options.removeCurrentHistory || false;
             }
 
-            if (relRoute && relRoute instanceof routes.VirtualRoute)
-            {
+            if (relRoute && relRoute instanceof routes.VirtualRoute) {
                 actualPath = this.getPathForRoute(relRoute);
             }
 
-            if (!(actualPath == this.currentHash || this.hashSymbol + actualPath == this.currentHash))
-            {
+            if (!(actualPath == this.currentHash || this.hashSymbol + actualPath == this.currentHash)) {
                 actualPath = this.fixPath(actualPath);
-                if (removeCurrentHistory)
-                {
+                if (removeCurrentHistory) {
                     this.hashService.setHashAsReplace(actualPath);
                 }
-                else
-                {
+                else {
                     this.hashService.setHash(actualPath);
                 }
             }
         }
 
-        navigateBack(): void
-        {
+        navigateBack(): void {
             history.back();
         }
 
-        navigateBackInCache(): void
-        {
+        navigateBackInCache(): void {
             this.forceNavigationInCache = true;
             this.navigateBack();
         }
 
-        navigateHome(): void
-        {
+        navigateHome(): void {
             this.navigateTo(this.startupUrl);
         }
 
-        getHashSymbol(): string
-        {
+        getHashSymbol(): string {
             return this.hashSymbol;
         }
 
-        cancelledByUrl(handler)
-        {
-            this.cancelledByUrlHandler = handler;
+        cancelledByUrl(handler) {
+            this.onCancelledByUrl.subscribe(handler);
         }
 
-        refreshCurrentRoute(): void
-        {
+        refreshCurrentRoute(): void {
             var pureHash = utils.getHash(window.location.toString()).replace(this.hashSymbol, "");
             var route = this.getRoute(pureHash);
-            if (route != null)
-            {
+            if (route != null) {
                 this.currentRoute(route);
             }
         }
 
         //#region Configuration Methods
-        registerRoute(routeToMap: routes.Route): Router
-        {
+        registerRoute(routeToMap: routes.Route): Router {
             this.routes.push(routeToMap);
-            if (routeToMap.isDefault)
-            {
+            if (routeToMap.isDefault) {
                 this.defaultRoute = routeToMap;
                 this.defaultPath = this.hashSymbol + this.getPathForRoute(routeToMap);
             }
@@ -263,20 +232,16 @@ module routing
             return this;
         }
 
-        registerRoutes = function (routesToMap: routes.Route[]): void
-        {
-            for (var i in routesToMap)
-            {
+        registerRoutes = function (routesToMap: routes.Route[]): void {
+            for (var i in routesToMap) {
                 this.registerRoute(routesToMap[i]);
             }
 
             this.defaultPath = this.hashSymbol + this.getPathForRoute(this.defaultRoute);
         };
 
-        setLogger(logger: ILogger): Router
-        {
-            if (!logger)
-            {
+        setLogger(logger: ILogger): Router {
+            if (!logger) {
                 throw new Error("Parameter 'logger' is null or undefined!");
             }
 
@@ -284,20 +249,18 @@ module routing
             return this;
         }
 
-        init = function (routes, mainContainerId, options)
-        {
+        init(routes: routes.Route[], mainContainerId: string, options: IRouterInitOptions) {
             var enableLogging;
             this.hashService.on_changing = this.hashChanginHandler;
             this.hashService.on_changed = this.hashChangedHandler;
             this.hashService.on_cancelledByUrl = this.hashChangeCancelledHandler;
 
-            if (options)
-            {
-                this.forceCaching = options.preloadEnabled || false;
-                this.onPreloadComplete = options.preloadComplete || null;
-                this.beforeNavigationHandler = options.beforeNavigation || null;
-                this.afterNavigationHandler = options.afterNavigation || null;
-                this.navigationErrorHandler = options.navigationError || null;
+            if (options) {
+                //this.forceCaching = options.preloadEnabled || false;
+                //this.onPreloadComplete = options.preloadComplete || null;
+                //this.beforeNavigationHandler = options.beforeNavigation || null;
+                //this.afterNavigationHandler = options.afterNavigation || null;
+                //this.navigationErrorHandler = options.navigationError || null;
                 enableLogging = options.enableLogging || true;
             }
 
@@ -309,16 +272,13 @@ module routing
             return this;
         };
 
-        run(): Router
-        {
-            if (!this.initialized)
-            {
+        run(): Router {
+            if (!this.initialized) {
                 throw new Error("Router is not initialized. Router should be initialized first!");
                 return;
             }
 
-            if (this.forceCaching)
-            {
+            if (this.forceCaching) {
                 // TODO: Implement preloading functionality!
                 //if (this.onPreloadComplete)
                 //{
@@ -330,8 +290,7 @@ module routing
             this.currentLogger.info("Successfully started.");
             this.hashService.start();
             this.startupUrl = this.hashService.hash || this.defaultPath;
-            if (this.startupUrl == this.defaultPath)
-            {
+            if (this.startupUrl == this.defaultPath) {
                 this.hashService.setHash(this.startupUrl);
             }
 
@@ -341,19 +300,15 @@ module routing
         //#endregion
         
         //#region Utils
-        getRoute(routeLink: string): routes.Route
-        {
-            var delegate = (x: routes.Route): boolean =>
-            {
+        getRoute(routeLink: string): routes.Route {
+            var delegate = (x: routes.Route): boolean => {
                 var path2 = routeLink.toString().replace(this.hashSymbol, "");
                 var result = this.isMatchesV2(x.pattern, path2);
                 return result;
             };
             var res: routes.Route = null;
-            for (var i = 0; i < this.allRoutes.length; i++)
-            {
-                if (delegate(this.allRoutes[i]))
-                {
+            for (var i = 0; i < this.allRoutes.length; i++) {
+                if (delegate(this.allRoutes[i])) {
                     res = this.allRoutes[i];
                     break;
                 }
@@ -362,52 +317,43 @@ module routing
             return res;
         }
 
-        isMatches(path1: string, path2: string): boolean
-        {
+        isMatches(path1: string, path2: string): boolean {
             var result = true,
                 path1Parts = path1.toString().split("/"),
                 path2Parts = path2.toString().split("/");
-            if (path1Parts.length == path2Parts.length)
-            {
-                for (var i = 0; i < path1Parts.length; i++)
-                {
-                    if (!path1Parts[i].match(/^:.+/) && path1Parts[i] != path2Parts[i])
-                    {
+
+            if (path1Parts.length == path2Parts.length) {
+                for (var i = 0; i < path1Parts.length; i++) {
+                    if (!path1Parts[i].match(/^:.+/) && path1Parts[i] != path2Parts[i]) {
                         return false;
                     }
                 }
             }
-            else
-            {
+            else {
                 result = false;
             }
 
             return result;
         }
 
-        isMatchesV2(path1: string, path2: string): boolean
-        {
+        isMatchesV2(path1: string, path2: string): boolean {
             var path1Parts = this.cleanPath(path1).split("/"),
                 path2Parts = this.cleanPath(path2).split("/");
-            if (path1Parts.length < path2Parts.length)
-            {
+
+            if (path1Parts.length < path2Parts.length) {
                 return false;
             }
 
-            for (var i = 0; i < path1Parts.length; i++)
-            {
-                if (path1Parts[i].match(/^\{\?[^\?]+\}$/))
-                {
+            for (var i = 0; i < path1Parts.length; i++) {
+                if (path1Parts[i].match(/^\{\?[^\?]+\}$/)) {
                     continue;
                 }
 
-                if (path1Parts[i].match(/^\{([^\?])+\}$/) && path2Parts[i])
-                {
+                if (path1Parts[i].match(/^\{([^\?])+\}$/) && path2Parts[i]) {
                     continue;
                 }
 
-                if (path1Parts[i] == path2Parts[i])
-                {
+                if (path1Parts[i] == path2Parts[i]) {
                     continue;
                 }
 
@@ -417,30 +363,23 @@ module routing
             return true;
         }
 
-        private cleanPath(path: string): string
-        {
+        private cleanPath(path: string): string {
             return path.replace(/(\/\/+)/, "/").replace(/(\/+)$/, "").replace(/^(\/+)/, "");
         }
 
-        private getPathForRoute(route: routes.Route): string
-        {
-            if (route)
-            {
-                if (route instanceof routes.VirtualRoute)
-                {
+        private getPathForRoute(route: routes.Route): string {
+            if (route) {
+                if (route instanceof routes.VirtualRoute) {
                     var vroute = <routes.VirtualRoute>route;
                     var defaultChild: routes.Route = null;
-                    for (var i = 0; i < vroute.childRoutes.length; i++)
-                    {
-                        if (vroute.childRoutes[i].isDefault)
-                        {
+                    for (var i = 0; i < vroute.childRoutes.length; i++) {
+                        if (vroute.childRoutes[i].isDefault) {
                             defaultChild = vroute.childRoutes[i];
                             break;
                         }
                     }
 
-                    if (defaultChild == null)
-                    {
+                    if (defaultChild == null) {
                         throw new Error("Route '" + route.pattern + "' has invalid configuration of child elements.");
                     }
 
@@ -453,14 +392,11 @@ module routing
             return null;
         }
 
-        private getCompletePath(path: string, params: any): string
-        {
+        private getCompletePath(path: string, params: any): string {
             var matches = path.toString().match(/\{.+\}/);
             var completePath = path.toString();
-            if (matches)
-            {
-                for (var i = 0; i < matches.length; i++)
-                {
+            if (matches) {
+                for (var i = 0; i < matches.length; i++) {
                     var paramName = matches[i].toString().replace("{", "").replace("}", "");
                     completePath = completePath.replace("{" + paramName + "}", params[paramName]);
                 }
@@ -475,31 +411,25 @@ module routing
         //    return eval("new " + className + "()");
         //}
 
-        private fixPath(path: string): string
-        {
-            if (!path.match(/^/ + this.hashSymbol + /.+/))
-            {
+        private fixPath(path: string): string {
+            if (!path.match(/^/ + this.hashSymbol + /.+/)) {
                 return this.hashSymbol + path.replace("#/", "");
             }
         }
 
-        private createCurrentRoute(): KnockoutObservable<routes.Route>
-        {
+        private createCurrentRoute(): KnockoutObservable<routes.Route> {
             return ko.observable<routes.Route>(null);
         }
 
-        private raiseOnNavigatedTo(route: routes.NavigationRoute, context: INavigationContext): void
-        {
-            if (route.onNavigatedTo != null && (!this.isRedirecting || !this.preventRaisingNavigateTo))
-            {
+        private raiseOnNavigatedTo(route: routes.NavigationRoute, context: INavigationContext): void {
+            if (route.onNavigatedTo != null && (!this.isRedirecting || !this.preventRaisingNavigateTo)) {
                 var params = context.params;
                 route.onNavigatedTo(params, this.currentPayload);
                 this.currentPayload = null;
             }
         }
 
-        private getContext(route: routes.Route, hash: string): INavigationContext
-        {
+        private getContext(route: routes.Route, hash: string): INavigationContext {
             var context: INavigationContext = {
                 associeatedRoute: route,
                 path: hash.replace(this.hashSymbol, "")
@@ -512,16 +442,13 @@ module routing
             //    throw new Error("Invalid path. Unable to create navigation context.");
             //}
 
-            for (var i = 0; i < patternParts.length; i++)
-            {
-                if (patternParts[i].toString().match(/^\{[^\?]+\}$/))
-                {
+            for (var i = 0; i < patternParts.length; i++) {
+                if (patternParts[i].toString().match(/^\{[^\?]+\}$/)) {
                     var paramName = patternParts[i].toString().replace("{", "").replace("}", "");
                     params[paramName] = pathParts[i];
                 }
 
-                if (patternParts[i].toString().match(/^\{\?[^\?]+\}$/))
-                {
+                if (patternParts[i].toString().match(/^\{\?[^\?]+\}$/)) {
                     var paramName = patternParts[i].toString().replace("{?", "").replace("}", "");
                     params[paramName] = pathParts[i];
                     //if (!pathParts[i])
@@ -537,36 +464,29 @@ module routing
         //#endregion
 
         //#region Hash Events handlers.
-        private hashChanginHandler = (hash: string, callback: (cancelNavigation: boolean) => void): void =>
-        {
-            if (!this.getRoute(hash))
-            {
+        private hashChanginHandler = (hash: string, callback: (cancelNavigation: boolean) => void): void => {
+            if (!this.getRoute(hash)) {
                 callback(true);
                 this.currentLogger.error("Navigation to '" + hash + "' was prevented. The route to this pattern was not found.")
                 return;
             }
 
-            if (this.currentRoute() == null)
-            {
+            if (this.currentRoute() == null) {
                 callback(false);
                 return;
             }
 
             // Can leave route processing.
-            if (!this.isRedirecting)
-            {
+            if (!this.isRedirecting) {
                 this.currentRoute().canLeave(
-                    (accept: boolean) => 
-                    { // Leaving callvack parameter
-                        if (accept)
-                        {  // Leave navigation accepted
+                    (accept: boolean) => {   // Leaving callvack parameter
+                        if (accept) {   // Leave navigation accepted
                             this.isRedirecting = false;
                             this.currentHash = hash;
                             callback(false);
                             this.preventRaisingNavigateTo = false;
                         }
-                        else
-                        { // Navigation cancelled
+                        else {   // Navigation cancelled
                             this.backNavigation = false;
                             callback(true);
                         }
@@ -574,14 +494,13 @@ module routing
                         this.forceReloadOnNavigation = false;
                         this.forceNavigationInCache = false;
                     },
-                    { // Navigation info
+                    {   // Navigation info
                         targetRoute: this.getRoute(hash), // Target route parameter
                         forceReloadOnNavigation: this.forceReloadOnNavigation,
                         forceNavigationInCache: this.forceNavigationInCache
                     });
             }
-            else
-            {
+            else {
                 this.isRedirecting = false;
                 this.currentHash = hash;
                 callback(false);
@@ -589,62 +508,50 @@ module routing
             }
         }
 
-        private hashChangedHandler = (hash: string): void =>
-        {
+        private hashChangedHandler = (hash: string): void => {
             var route = this.getRoute(hash);
             var context = this.getContext(route, hash);
             var routeHandler;
             var delegate = (x) => { return x.pattern == route.pattern; };
-            for (var i = 0; i < this.handlers.length; i++)
-            {
-                if (delegate(this.handlers[i]))
-                {
+            for (var i = 0; i < this.handlers.length; i++) {
+                if (delegate(this.handlers[i])) {
                     routeHandler = this.handlers[i];
                 }
             }
 
             var croute = this.currentRoute();
-            if (croute && croute instanceof routes.NavigationRoute)
-            {
+            if (croute && croute instanceof routes.NavigationRoute) {
                 (<routes.NavigationRoute>croute).state = routes.LoadingState.canceled;
-                if ((<routes.NavigationRoute>croute).onNavigatedFrom)
-                {
+                if ((<routes.NavigationRoute>croute).onNavigatedFrom) {
                     (<routes.NavigationRoute>croute).onNavigatedFrom();
                 }
             }
 
             routeHandler.handler(context);
 
-            if (!this.preventRaisingNavigateTo)
-            {
+            if (!this.preventRaisingNavigateTo) {
                 this.currentLogger.info("Navigated to '" + hash + "'.");
             }
-            else
-            {
+            else {
                 this.currentLogger.info("Navigion was prevented.");
             }
 
             this.refreshCurrentRoute();
         }
 
-        private hashChangeCancelledHandler = (): void =>
-        {
+        private hashChangeCancelledHandler = (): void => {
             this.forceReloadOnNavigation = false;
             this.forceNavigationInCache = false;
-            if (this.cancelledByUrlHandler)
-            {
-                this.cancelledByUrlHandler();
+            if (this.onCancelledByUrl) {
+                this.onCancelledByUrl.raise();
             }
         }
         //#endregion
 
         //#region Route init method
-        private mapVirtualRoute(routeToMap: routes.VirtualRoute): void
-        {
-            if (routeToMap.childRoutes)
-            {
-                for (var i in routeToMap.childRoutes)
-                {
+        private mapVirtualRoute(routeToMap: routes.VirtualRoute): void {
+            if (routeToMap.childRoutes) {
+                for (var i in routeToMap.childRoutes) {
                     routeToMap.childRoutes[i].parrentRoute = routeToMap;
                     routeToMap.childRoutes[i].pattern = routeToMap.pattern + "/" + routeToMap.childRoutes[i].pattern;
                     this.initRoute(routeToMap.childRoutes[i]);
@@ -652,37 +559,29 @@ module routing
             }
         }
 
-        private mapNavigationRoute(routeToMap: routes.NavigationRoute): void
-        {
-            this.handlers.push(new RouteHandler(routeToMap.pattern, (context) =>
-            {
-                function completeNavigation()
-                {
+        private mapNavigationRoute(routeToMap: routes.NavigationRoute): void {
+            this.handlers.push(new RouteHandler(routeToMap.pattern, (context) => {
+                var completeNavigation = () => {
                     (<routes.NavigationRoute>context.associeatedRoute).state = routes.LoadingState.complete;
-                    if (this.afterNavigationHandler)
-                    {
-                        this.afterNavigationHandler();
+                    if (this.onAfterNavigation) {
+                        this.onAfterNavigation.raise();
                     }
 
-                    if (this.fresh)
-                    {
+                    if (this.fresh) {
                         this.fresh = false;
                     }
                 };
 
-                function onNavigationError()
-                {
-                    if (this.navigationErrorHandler)
-                    {
+                var onNavigationError = () => {
+                    if (this.onNavigationError) {
                         this.currentLogger.warning("Navigation error is handling...")
-                        this.navigationErrorHandler();
+                        this.onNavigationError.raise();
                     }
                 };
 
 
-                if (this.beforeNavigationHandler)
-                {
-                    this.beforeNavigationHandler();
+                if (this.onBeforeNavigation) {
+                    this.onBeforeNavigation.raise();
                 }
 
                 (<routes.NavigationRoute>context.associeatedRoute).state = routes.LoadingState.loading;
@@ -695,136 +594,110 @@ module routing
                 //    routeToMap.enable
                 //} // wtf?
 
-                if (routeToMap.title)
-                {
+                if (routeToMap.title) {
                     document.title = routeToMap.title;
                 }
-                else
-                {
+                else {
                     document.title = this.defaultTitle;
                 }
 
-                if (existing && existing.length >= 1)
-                { // Requested view already existing
-                    if ((routeToMap.cacheView || this.forceNavigationInCache) && !this.forceReloadOnNavigation)
-                    { // Showing cached view
-                        if (this.forceNavigationInCache)
-                        {
+                if (existing && existing.length >= 1) {   // Requested view already existing
+                    if ((routeToMap.cacheView || this.forceNavigationInCache) && !this.forceReloadOnNavigation) {   // Showing cached view
+                        if (this.forceNavigationInCache) {
                             this.forceNavigationInCache = false;
                         }
 
                         jelem.children().hide();
                         existing.show();
-                        if (!preventRaisingNavigateToCache)
-                        { // This mean, that on navigation to the cache onNavigateTo shouldn't be called
+                        if (!preventRaisingNavigateToCache) {   // This mean, that on navigation to the cache onNavigateTo shouldn't be called
                             this.raiseOnNavigatedTo(routeToMap, context);
                         }
 
                         completeNavigation();
                     }
-                    else
-                        if (!preventRaisingNavigateToCache)
-                        { // Requesting view exists but should be reloaded
-                            if (this.forceReloadOnNavigation)
-                            {
-                                this.forceReloadOnNavigation = false;
-                            }
+                    else if (!preventRaisingNavigateToCache) {   // Requesting view exists but should be reloaded
+                        if (this.forceReloadOnNavigation) {
+                            this.forceReloadOnNavigation = false;
+                        }
 
-                            $.ajax({
-                                url: completePath,
-                                data: null,
-                                cache: false,
-                                error: onNavigationError,
-                                success: (response) =>
-                                {
-                                    if (routeToMap.state == routes.LoadingState.canceled)
-                                    {
-                                        this.currentLogger.warning("Navigation to " + context.path + " was cancelled!");
-                                        return;
+                        $.ajax({
+                            url: completePath,
+                            data: null,
+                            cache: false,
+                            error: onNavigationError,
+                            success: (response) => {
+                                if (routeToMap.state == routes.LoadingState.canceled) {
+                                    this.currentLogger.warning("Navigation to " + context.path + " was cancelled!");
+                                    return;
+                                }
+
+                                if (routeToMap.vmFactory != null) {   // If view model exists ko cleanups existing element
+                                    if (existing && existing.get(0)) {
+                                        ko.cleanNode(existing.get(0));
                                     }
+                                }
 
-                                    if (routeToMap.vmFactory != null)
-                                    { // If view model exists ko cleanups existing element
-                                        if (existing && existing.get(0))
-                                        {
-                                            ko.cleanNode(existing.get(0));
-                                        }
-                                    }
-
-                                    existing.html(response);
-                                    if (routeToMap.vmFactory != null)
-                                    { // View contains view model
-                                        var factory = routeToMap.vmFactory;
-                                        factory((instance) =>
-                                        {
-                                            ko.applyBindings(instance, existing.get(0));
-                                            routeToMap.currentVM = instance;
-                                            jelem.children().hide();
-                                            if (!preventRaisingNavigateToCache)
-                                            {
-                                                this.raiseOnNavigatedTo(routeToMap, context);
-                                            }
-
-                                            existing.show();
-                                            completeNavigation();
-                                        });
-                                    }
-                                    else
-                                    { // View without view model
-                                        routeToMap.currentVM = null;
+                                existing.html(response);
+                                if (routeToMap.vmFactory != null) {   // View contains view model
+                                    var factory = routeToMap.vmFactory;
+                                    factory((instance) => {
+                                        ko.applyBindings(instance, existing.get(0));
+                                        routeToMap.currentVM = instance;
                                         jelem.children().hide();
-                                        if (!preventRaisingNavigateToCache)
-                                        {
+                                        if (!preventRaisingNavigateToCache) {
                                             this.raiseOnNavigatedTo(routeToMap, context);
                                         }
 
                                         existing.show();
                                         completeNavigation();
-                                    }
+                                    });
                                 }
-                            });
-                        }
-                        else
-                        { // Mean, that navigation was prevented (used by router internally to handle canceled navigations)
-                            completeNavigation();
-                        }
+                                else {   // View without view model
+                                    routeToMap.currentVM = null;
+                                    jelem.children().hide();
+                                    if (!preventRaisingNavigateToCache) {
+                                        this.raiseOnNavigatedTo(routeToMap, context);
+                                    }
+
+                                    existing.show();
+                                    completeNavigation();
+                                }
+                            }
+                        });
+                    }
+                    else {   // Mean, that navigation was prevented (used by router internally to handle canceled navigations)
+                        completeNavigation();
+                    }
                 }
-                else
-                { // View does not exists
+                else {   // View does not exists
                     $.ajax({
                         url: completePath,
                         data: null,
                         cache: false,
                         error: onNavigationError,
-                        success: (response) =>
-                        {
-                            if (routeToMap.state == routes.LoadingState.canceled)
-                            {
+                        success: (response) => {
+                            if (routeToMap.state == routes.LoadingState.canceled) {
                                 this.currentLogger.warning("Navigation to " + context.path + " were cancelled!");
                                 return;
                             }
 
                             jelem.children().hide();
                             jelem.append("<div data-view=\"" + routeToMap.pattern + "\">" + response + "</div>"); // View wrap container that store system info
-                            if (routeToMap.vmFactory != null)
-                            { // View contains view model
+                            if (routeToMap.vmFactory != null) {   // View contains view model
                                 existing = $("[data-view=\"" + routeToMap.pattern + "\"]", jelem);
                                 var factory = routeToMap.vmFactory;
-                                factory((instance) =>
-                                {
+                                factory((instance) => {
                                     ko.applyBindings(instance, existing.get(0));
                                     routeToMap.currentVM = instance;
-                                    if (!preventRaisingNavigateToCache)
-                                    {
+                                    if (!preventRaisingNavigateToCache) {
                                         this.raiseOnNavigatedTo(routeToMap, context);
                                     }
 
                                     completeNavigation();
                                 });
-                            } else
-                            { // View without view model
-                                if (!preventRaisingNavigateToCache)
-                                {
+                            }
+                            else {   // View without view model
+                                if (!preventRaisingNavigateToCache) {
                                     this.raiseOnNavigatedTo(routeToMap, context);
                                 }
 
@@ -837,12 +710,10 @@ module routing
             }));
         }
 
-        private initRoute(routeToMap: routes.Route): void
-        {
+        private initRoute(routeToMap: routes.Route): void {
             this.allRoutes.push(routeToMap);
             this.currentLogger.info("Registering route '" + routeToMap.pattern + "'.");
-            switch (utils.getType(routeToMap))
-            {
+            switch (utils.getType(routeToMap)) {
                 //case "FuncRoute":
                 //    this.handlers.push(new RouteHandler(routeToMap.pattern, function (context)
                 //    {

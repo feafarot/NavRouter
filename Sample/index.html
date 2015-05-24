@@ -4,7 +4,6 @@
 <head>
     <title>NavRouter - Sample application</title>
     <link href="Content/bootstrap.min.css" rel="stylesheet" charset="utf-8" />
-    <!--<link href="Content/bootstrap-theme.min.css" rel="stylesheet" />-->
     <!--<link href="css/main.css" rel="stylesheet" />-->
 </head>
 <body>
@@ -27,18 +26,17 @@
                     <li data-bind="navigate: 'pages/p3', activeClass: 'active'"><a>Page 3</a></li>
                     <li data-bind="navigateBack: { forceNavigationInCache: true }"><a>&nbsp;Back in Cache</a></li>
                 </ul>
-            </div><!-- /.navbar-collapse -->
-        </div><!-- /.container-fluid -->
+            </div>
+        </div>
     </nav>
+    <div style="height: 60px;"></div>
 
-    <div style="height: 60px;">
-
-    </div>
 
     <div class="container">
         <div id="views-placeholder">
         </div>
     </div>
+
 
     <script src="../Scripts/jquery-2.1.0.min.js" charset="utf-8"></script>
     <script src="../Scripts/bootstrap.min.js" charset="utf-8"></script>

@@ -2,32 +2,26 @@
 /// <reference path="../Scripts/typings/knockout/knockout.d.ts" />
 /// <reference path="Router.ts" />
 
-interface KnockoutBindingHandlers
-{
+interface KnockoutBindingHandlers {
     navigate: KnockoutBindingHandler;
     navigateBack: KnockoutBindingHandler;
 }
 
-module routing.knockout
-{
+module routing.knockout {
     var _router: Router = null;
 
-    function checkRouter(): void
-    {
-        if (_router == null || _router == undefined)
-        {
+    export function setCurrentRouter(router: Router): void {
+        _router = router;
+    }
+
+    function checkRouter(): void {
+        if (_router == null || _router == undefined) {
             throw new Error("Router instance do not setted. Please set it usting 'Routing.ko.setCurrentRouter' method.");
         }
     }
 
-    function isString(obj: any): boolean
-    {
+    function isString(obj: any): boolean {
         return typeof obj == "string" || obj instanceof String;
-    }
-
-    export function setCurrentRouter(router: Router): void
-    {
-        _router = router;
     }
 
     ko.bindingHandlers.navigate = {
@@ -42,24 +36,18 @@ module routing.knockout
                 oldClass;
 
             payload = bindings.payload || null;
-            if (element.tagName == "A" && payload == null && false)
-            { // TODO: Hack. Rework!
+            if (element.tagName == "A" && payload == null && false) { // TODO: Hack. Rework!
                 $elem.attr("href", "#!/" + navLink);
             }
-            else
-            {
-                if (element.tagName == "A")
-                {
+            else {
+                if (element.tagName == "A") {
                     $elem.attr("href", "#");
                 }
 
-                $elem.click((event) =>
-                {
+                $elem.click((event) => {
                     event.preventDefault();
-                    if (_router.initialized)
-                    {
-                        if (payload == null)
-                        {
+                    if (_router.initialized) {
+                        if (payload == null) {
                             _router.navigateTo(
                                 navLink,
                                 {
@@ -68,8 +56,7 @@ module routing.knockout
                                     forceNavigationInCache: ko.utils.unwrapObservable(forceNavigationInCache)
                                 });
                         }
-                        else
-                        {
+                        else {
                             _router.navigateTo(
                                 navLink,
                                 {
@@ -83,18 +70,13 @@ module routing.knockout
                 });
             }
 
-            var checkChilds = (path: string, route: routes.Route) =>
-            {
-                if (route instanceof routes.VirtualRoute && (<routes.VirtualRoute>route).childRoutes.length > 0)
-                {
-                    for (var i in (<routes.VirtualRoute>route).childRoutes)
-                    {
-                        if (_router.isMatches((<routes.VirtualRoute>route).childRoutes[i].pattern, path))
-                        {
+            var checkChilds = (path: string, route: routes.Route) => {
+                if (route instanceof routes.VirtualRoute && (<routes.VirtualRoute>route).childRoutes.length > 0) {
+                    for (var i in (<routes.VirtualRoute>route).childRoutes) {
+                        if (_router.isMatches((<routes.VirtualRoute>route).childRoutes[i].pattern, path)) {
                             return true;
                         }
-                        else if (checkChilds(path, (<routes.VirtualRoute>route).childRoutes[i]))
-                        {
+                        else if (checkChilds(path, (<routes.VirtualRoute>route).childRoutes[i])) {
                             return true;
                         }
                     }
@@ -103,24 +85,18 @@ module routing.knockout
                 return false;
             };
 
-            _router.currentRoute.subscribe(() =>
-            {
+            _router.currentRoute.subscribe(() => {
                 var currentClass = $elem.attr("class");
-                if (bindings.activeClass)
-                {
+                if (bindings.activeClass) {
                     var path = routing.utils.getHash(window.location).replace(_router.getHashSymbol(), "");
-                    if (path == navLink || checkChilds(path, _router.getRoute(navLink)))
-                    {
-                        if (!$elem.hasClass(bindings.activeClass))
-                        {
+                    if (path == navLink || checkChilds(path, _router.getRoute(navLink))) {
+                        if (!$elem.hasClass(bindings.activeClass)) {
                             oldClass = currentClass || null;
                             $elem.addClass(bindings.activeClass);
                         }
                     }
-                    else
-                    {
-                        if ($elem.hasClass(bindings.activeClass))
-                        {
+                    else {
+                        if ($elem.hasClass(bindings.activeClass)) {
                             $elem.removeClass(bindings.activeClass);
                         }
                     }
@@ -132,20 +108,16 @@ module routing.knockout
     };
 
     ko.bindingHandlers.navigateBack = {
-        init: function (elem, valueAccessor)
-        {
+        init: function (elem, valueAccessor) {
             var $elem = $(elem),
                 options = valueAccessor(),
                 forceNavigationInCache = options.forceNavigationInCache || false;
 
-            $elem.click(() =>
-            {
-                if (forceNavigationInCache)
-                {
+            $elem.click(() => {
+                if (forceNavigationInCache) {
                     _router.navigateBackInCache();
                 }
-                else
-                {
+                else {
                     _router.navigateBack();
                 }
             });

@@ -101,7 +101,6 @@ declare module routing.utils {
     function filterArray<T>(array: Array<T>, predicate: (element: T) => boolean): Array<T>;
     class Event<TArgs> {
         private handlers;
-        constructor();
         subscribe(handler: (args?: TArgs) => void): string;
         unsubscribe(handler: (args?: TArgs) => void): void;
         unsubscribeByToken(handlerToken: string): void;
@@ -118,9 +117,6 @@ declare module routing {
         params?: any;
     }
     interface IRouterInitOptions {
-        beforeNavigationHandler?: () => void;
-        afterNavigationHandler?: () => void;
-        navigationErrorHandler?: () => void;
         enableLogging?: boolean;
     }
     class Router {
@@ -128,6 +124,10 @@ declare module routing {
         routes: routes.Route[];
         currentRoute: KnockoutObservable<routes.Route>;
         history: string[];
+        onBeforeNavigation: utils.Event<any>;
+        onAfterNavigation: utils.Event<any>;
+        onNavigationError: utils.Event<any>;
+        onCancelledByUrl: utils.Event<any>;
         private hashSymbol;
         private defaultPath;
         private currentHash;
@@ -148,10 +148,6 @@ declare module routing {
         private backNavigation;
         private isRedirecting;
         private preventRaisingNavigateTo;
-        private beforeNavigationHandler;
-        private afterNavigationHandler;
-        private navigationErrorHandler;
-        private cancelledByUrlHandler;
         constructor(mainContainerId: string, options?: IRouterInitOptions, routesToMap?: routes.Route[]);
         navigateTo(path: string, options?: any): void;
         navigateBack(): void;
@@ -163,7 +159,7 @@ declare module routing {
         registerRoute(routeToMap: routes.Route): Router;
         registerRoutes: (routesToMap: routes.Route[]) => void;
         setLogger(logger: ILogger): Router;
-        init: (routes: any, mainContainerId: any, options: any) => any;
+        init(routes: routes.Route[], mainContainerId: string, options: IRouterInitOptions): Router;
         run(): Router;
         getRoute(routeLink: string): routes.Route;
         isMatches(path1: string, path2: string): boolean;

@@ -13,19 +13,7 @@ var router = new routing.Router(
     {
         enableLogging: true,
         preloadEnabled: true,
-        preloadComplete: function ()
-        {
-            //indication.app.hide();
-        },
-        beforeNavigation: function ()
-        {
-            //indication.main.show();
-        },
-        afterNavigation: function ()
-        {
-            //indication.main.hide();
-        },
-        navigationError: function ()
+        navigationError: () =>
         {
             router.navigateBack();
         }

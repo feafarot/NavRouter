@@ -157,12 +157,9 @@ var routing;
     var SilentLogger = (function () {
         function SilentLogger() {
         }
-        SilentLogger.prototype.warning = function (message) {
-        };
-        SilentLogger.prototype.error = function (message) {
-        };
-        SilentLogger.prototype.info = function (message) {
-        };
+        SilentLogger.prototype.warning = function (message) { };
+        SilentLogger.prototype.error = function (message) { };
+        SilentLogger.prototype.info = function (message) { };
         return SilentLogger;
     })();
     routing.SilentLogger = SilentLogger;
@@ -186,15 +183,11 @@ var routing;
                 this.pattern = routePattern || null;
                 if (!options) {
                     this.isDefault = false;
-                    this.canLeave = function (callback) {
-                        callback(true);
-                    };
+                    this.canLeave = function (callback) { callback(true); };
                     return;
                 }
                 this.isDefault = options.isDefault || false;
-                this.canLeave = options.canLeave || (function (callback, navOptions) {
-                    callback(true);
-                });
+                this.canLeave = options.canLeave || (function (callback, navOptions) { callback(true); });
             }
             return Route;
         })();
@@ -230,7 +223,7 @@ var routing;
                     this.onNavigatedTo = null;
                     this.title = null;
                     this.toolbarId = null;
-                    this.state = 1 /* complete */;
+                    this.state = LoadingState.complete;
                 }
                 else {
                     if (options.vmFactory) {
@@ -254,7 +247,7 @@ var routing;
                     this.toolbarId = options.toolbarId;
                     this.cacheView = options.cacheView == undefined ? true : options.cacheView;
                     this.title = options.title || null;
-                    this.state = 1 /* complete */;
+                    this.state = LoadingState.complete;
                 }
                 _super.call(this, routePattern, options);
             }
@@ -322,14 +315,10 @@ var routing;
                 return guid;
             };
             Event.prototype.unsubscribe = function (handler) {
-                this.handlers = filterArray(this.handlers, function (x) {
-                    return x.handler !== handler;
-                });
+                this.handlers = filterArray(this.handlers, function (x) { return x.handler !== handler; });
             };
             Event.prototype.unsubscribeByToken = function (handlerToken) {
-                this.handlers = filterArray(this.handlers, function (x) {
-                    return x.token !== handlerToken;
-                });
+                this.handlers = filterArray(this.handlers, function (x) { return x.token !== handlerToken; });
             };
             Event.prototype.add = function (handler) {
                 return this.subscribe(handler);
@@ -367,6 +356,10 @@ var routing;
             this.routes = new Array();
             this.currentRoute = this.createCurrentRoute();
             this.history = new Array();
+            this.onBeforeNavigation = new routing.utils.Event();
+            this.onAfterNavigation = new routing.utils.Event();
+            this.onNavigationError = new routing.utils.Event();
+            this.onCancelledByUrl = new routing.utils.Event();
             this.hashSymbol = "#!/";
             this.defaultPath = "";
             this.currentHash = "";
@@ -386,35 +379,11 @@ var routing;
             this.backNavigation = false;
             this.isRedirecting = false;
             this.preventRaisingNavigateTo = false;
-            this.beforeNavigationHandler = null;
-            this.afterNavigationHandler = null;
-            this.navigationErrorHandler = null;
-            this.cancelledByUrlHandler = null;
             this.registerRoutes = function (routesToMap) {
                 for (var i in routesToMap) {
                     this.registerRoute(routesToMap[i]);
                 }
                 this.defaultPath = this.hashSymbol + this.getPathForRoute(this.defaultRoute);
-            };
-            this.init = function (routes, mainContainerId, options) {
-                var enableLogging;
-                this.hashService.on_changing = this.hashChanginHandler;
-                this.hashService.on_changed = this.hashChangedHandler;
-                this.hashService.on_cancelledByUrl = this.hashChangeCancelledHandler;
-                if (options) {
-                    this.forceCaching = options.preloadEnabled || false;
-                    this.onPreloadComplete = options.preloadComplete || null;
-                    this.beforeNavigationHandler = options.beforeNavigation || null;
-                    this.afterNavigationHandler = options.afterNavigation || null;
-                    this.navigationErrorHandler = options.navigationError || null;
-                    enableLogging = options.enableLogging || true;
-                }
-                this.currentLogger = enableLogging ? new routing.DefaultRouterLogger() : new routing.SilentLogger();
-                this.containerId = mainContainerId;
-                this.initialized = true;
-                this.registerRoutes(routes);
-                this.currentLogger.info("Initialized.");
-                return this;
             };
             //#endregion
             //#region Hash Events handlers.
@@ -460,9 +429,7 @@ var routing;
                 var route = _this.getRoute(hash);
                 var context = _this.getContext(route, hash);
                 var routeHandler;
-                var delegate = function (x) {
-                    return x.pattern == route.pattern;
-                };
+                var delegate = function (x) { return x.pattern == route.pattern; };
                 for (var i = 0; i < _this.handlers.length; i++) {
                     if (delegate(_this.handlers[i])) {
                         routeHandler = _this.handlers[i];
@@ -470,7 +437,7 @@ var routing;
                 }
                 var croute = _this.currentRoute();
                 if (croute && croute instanceof routing.routes.NavigationRoute) {
-                    croute.state = 0 /* canceled */;
+                    croute.state = routing.routes.LoadingState.canceled;
                     if (croute.onNavigatedFrom) {
                         croute.onNavigatedFrom();
                     }
@@ -487,8 +454,8 @@ var routing;
             this.hashChangeCancelledHandler = function () {
                 _this.forceReloadOnNavigation = false;
                 _this.forceNavigationInCache = false;
-                if (_this.cancelledByUrlHandler) {
-                    _this.cancelledByUrlHandler();
+                if (_this.onCancelledByUrl) {
+                    _this.onCancelledByUrl.raise();
                 }
             };
             var enableLogging;
@@ -498,9 +465,9 @@ var routing;
             if (options) {
                 //this.forceCaching = options.preloadEnabled || false; // Not Implemented
                 //this.onPreloadComplete = options.preloadComplete || null;
-                this.beforeNavigationHandler = options.beforeNavigationHandler || null;
-                this.afterNavigationHandler = options.afterNavigationHandler || null;
-                this.navigationErrorHandler = options.navigationErrorHandler || null;
+                //this.beforeNavigationHandler = options.beforeNavigationHandler || null;
+                //this.afterNavigationHandler = options.afterNavigationHandler || null;
+                //this.navigationErrorHandler = options.navigationErrorHandler || null;
                 enableLogging = options.enableLogging || true;
             }
             this.currentLogger = enableLogging ? new routing.DefaultRouterLogger() : new routing.SilentLogger();
@@ -546,7 +513,7 @@ var routing;
             return this.hashSymbol;
         };
         Router.prototype.cancelledByUrl = function (handler) {
-            this.cancelledByUrlHandler = handler;
+            this.onCancelledByUrl.subscribe(handler);
         };
         Router.prototype.refreshCurrentRoute = function () {
             var pureHash = routing.utils.getHash(window.location.toString()).replace(this.hashSymbol, "");
@@ -572,6 +539,27 @@ var routing;
             this.currentLogger = logger;
             return this;
         };
+        Router.prototype.init = function (routes, mainContainerId, options) {
+            var enableLogging;
+            this.hashService.on_changing = this.hashChanginHandler;
+            this.hashService.on_changed = this.hashChangedHandler;
+            this.hashService.on_cancelledByUrl = this.hashChangeCancelledHandler;
+            if (options) {
+                //this.forceCaching = options.preloadEnabled || false;
+                //this.onPreloadComplete = options.preloadComplete || null;
+                //this.beforeNavigationHandler = options.beforeNavigation || null;
+                //this.afterNavigationHandler = options.afterNavigation || null;
+                //this.navigationErrorHandler = options.navigationError || null;
+                enableLogging = options.enableLogging || true;
+            }
+            this.currentLogger = enableLogging ? new routing.DefaultRouterLogger() : new routing.SilentLogger();
+            this.containerId = mainContainerId;
+            this.initialized = true;
+            this.registerRoutes(routes);
+            this.currentLogger.info("Initialized.");
+            return this;
+        };
+        ;
         Router.prototype.run = function () {
             if (!this.initialized) {
                 throw new Error("Router is not initialized. Router should be initialized first!");
@@ -702,6 +690,10 @@ var routing;
             var params = {};
             var patternParts = route.pattern.split("/");
             var pathParts = hash.replace(this.hashSymbol, "").split("/");
+            //if (pathParts.length != patternParts.length)
+            //{
+            //    throw new Error("Invalid path. Unable to create navigation context.");
+            //}
             for (var i = 0; i < patternParts.length; i++) {
                 if (patternParts[i].toString().match(/^\{[^\?]+\}$/)) {
                     var paramName = patternParts[i].toString().replace("{", "").replace("}", "");
@@ -729,27 +721,25 @@ var routing;
         Router.prototype.mapNavigationRoute = function (routeToMap) {
             var _this = this;
             this.handlers.push(new RouteHandler(routeToMap.pattern, function (context) {
-                function completeNavigation() {
-                    context.associeatedRoute.state = 1 /* complete */;
-                    if (this.afterNavigationHandler) {
-                        this.afterNavigationHandler();
+                var completeNavigation = function () {
+                    context.associeatedRoute.state = routing.routes.LoadingState.complete;
+                    if (_this.onAfterNavigation) {
+                        _this.onAfterNavigation.raise();
                     }
-                    if (this.fresh) {
-                        this.fresh = false;
+                    if (_this.fresh) {
+                        _this.fresh = false;
                     }
-                }
-                ;
-                function onNavigationError() {
-                    if (this.navigationErrorHandler) {
-                        this.currentLogger.warning("Navigation error is handling...");
-                        this.navigationErrorHandler();
+                };
+                var onNavigationError = function () {
+                    if (_this.onNavigationError) {
+                        _this.currentLogger.warning("Navigation error is handling...");
+                        _this.onNavigationError.raise();
                     }
+                };
+                if (_this.onBeforeNavigation) {
+                    _this.onBeforeNavigation.raise();
                 }
-                ;
-                if (_this.beforeNavigationHandler) {
-                    _this.beforeNavigationHandler();
-                }
-                context.associeatedRoute.state = 2 /* loading */;
+                context.associeatedRoute.state = routing.routes.LoadingState.loading;
                 var jelem = $("#" + _this.containerId);
                 var completePath = _this.getCompletePath(routeToMap.viewPath, context.params);
                 var existing = $("[data-view=\"" + routeToMap.pattern + "\"]", jelem);
@@ -786,7 +776,7 @@ var routing;
                             cache: false,
                             error: onNavigationError,
                             success: function (response) {
-                                if (routeToMap.state == 0 /* canceled */) {
+                                if (routeToMap.state == routing.routes.LoadingState.canceled) {
                                     _this.currentLogger.warning("Navigation to " + context.path + " was cancelled!");
                                     return;
                                 }
@@ -832,7 +822,7 @@ var routing;
                         cache: false,
                         error: onNavigationError,
                         success: function (response) {
-                            if (routeToMap.state == 0 /* canceled */) {
+                            if (routeToMap.state == routing.routes.LoadingState.canceled) {
                                 _this.currentLogger.warning("Navigation to " + context.path + " were cancelled!");
                                 return;
                             }
@@ -866,6 +856,12 @@ var routing;
             this.allRoutes.push(routeToMap);
             this.currentLogger.info("Registering route '" + routeToMap.pattern + "'.");
             switch (routing.utils.getType(routeToMap)) {
+                //case "FuncRoute":
+                //    this.handlers.push(new RouteHandler(routeToMap.pattern, function (context)
+                //    {
+                //        routeToMap.func();
+                //    }));
+                //    break;
                 case "VirtualRoute":
                     this.mapVirtualRoute(routeToMap);
                     break;
@@ -886,6 +882,10 @@ var routing;
     var knockout;
     (function (knockout) {
         var _router = null;
+        function setCurrentRouter(router) {
+            _router = router;
+        }
+        knockout.setCurrentRouter = setCurrentRouter;
         function checkRouter() {
             if (_router == null || _router == undefined) {
                 throw new Error("Router instance do not setted. Please set it usting 'Routing.ko.setCurrentRouter' method.");
@@ -894,10 +894,6 @@ var routing;
         function isString(obj) {
             return typeof obj == "string" || obj instanceof String;
         }
-        function setCurrentRouter(router) {
-            _router = router;
-        }
-        knockout.setCurrentRouter = setCurrentRouter;
         ko.bindingHandlers.navigate = {
             init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
                 var $elem = $(element), bindings = allBindingsAccessor(), navLink = valueAccessor(), payload = null, forceReloadOnNavigation = bindings.forceReload || false, forceNavigationInCache = bindings.forceNavigationInCache || false, oldClass;
