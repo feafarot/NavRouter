@@ -48,22 +48,6 @@ declare module routing.routes {
         isDefault?: boolean;
         canLeave?: (callback: (allow: boolean) => void, navOptions: any) => void;
     }
-    class Route {
-        pattern: string;
-        parrentRoute: Route;
-        isDefault: boolean;
-        canLeave: (callback: (allow: boolean) => void, navOptions: any) => void;
-        constructor(routePattern: string, options: RouteOptions);
-    }
-    class VirtualRoute extends Route {
-        childRoutes: Route[];
-        constructor(routePattern: string, childRoutes: Route[], options: RouteOptions);
-    }
-    enum LoadingState {
-        canceled = 0,
-        complete = 1,
-        loading = 2,
-    }
     interface NavigationRouteOptions extends RouteOptions {
         currentVM?: any;
         cacheView?: boolean;
@@ -80,6 +64,22 @@ declare module routing.routes {
         onNavigatedTo?: (params: any, payload?: any) => void;
         canNavigateFrom?: (callback, navOptions: NavigationInfo) => void;
         onNavigatedFrom?: (newNavOptions: NavigationInfo) => void;
+    }
+    enum LoadingState {
+        canceled = 0,
+        complete = 1,
+        loading = 2,
+    }
+    class Route {
+        pattern: string;
+        parrentRoute: Route;
+        isDefault: boolean;
+        canLeave: (callback: (allow: boolean) => void, navOptions: any) => void;
+        constructor(routePattern: string, options: RouteOptions);
+    }
+    class VirtualRoute extends Route {
+        childRoutes: Route[];
+        constructor(routePattern: string, childRoutes: Route[], options: RouteOptions);
     }
     class NavigationRoute extends Route {
         viewPath: string;
@@ -124,10 +124,10 @@ declare module routing {
         routes: routes.Route[];
         currentRoute: KnockoutObservable<routes.Route>;
         history: string[];
-        onBeforeNavigation: utils.Event<any>;
-        onAfterNavigation: utils.Event<any>;
-        onNavigationError: utils.Event<any>;
-        onCancelledByUrl: utils.Event<any>;
+        onBeforeNavigation: routing.utils.Event<any>;
+        onAfterNavigation: routing.utils.Event<any>;
+        onNavigationError: routing.utils.Event<any>;
+        onCancelledByUrl: routing.utils.Event<any>;
         private hashSymbol;
         private defaultPath;
         private currentHash;

@@ -16,7 +16,7 @@ module routing.knockout {
 
     function checkRouter(): void {
         if (_router == null || _router == undefined) {
-            throw new Error("Router instance do not setted. Please set it usting 'Routing.ko.setCurrentRouter' method.");
+            throw new Error("Router instance do not set. Please set it using 'routing.knockout.setCurrentRouter' method.");
         }
     }
 

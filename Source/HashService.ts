@@ -82,7 +82,7 @@
                 this.on_changing(
                     newHash,
                     (cancelNavigation: boolean) => {
-                        if (currentCount != this.callCount) { // Cancelled by url changing on default!
+                        if (currentCount != this.callCount) { // Canceled by URL changing on default!
                             return;
                         }
 
@@ -150,5 +150,5 @@
             this.storedHash = window.location.hash;
             this.hashChanged(window.location.hash);
         }
-    };
+    }
 }

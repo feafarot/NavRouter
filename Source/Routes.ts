@@ -1,8 +1,36 @@
 ﻿module routing.routes {
+    //#region Interfaces
     export interface RouteOptions {
         parrentRoute?: string;
         isDefault?: boolean;
         canLeave?: (callback: (allow: boolean) => void, navOptions: any) => void;
+    }
+
+    export interface NavigationRouteOptions extends RouteOptions {
+        currentVM?: any;
+        cacheView?: boolean;
+        vmFactory?: any;
+        title?: string;
+        toolbarId?: string;
+    }
+
+    export interface NavigationInfo {
+        targetRoute: routes.Route;
+        forceReloadOnNavigation: boolean;
+        forceNavigationInCache: boolean;
+    }
+
+    export interface INavigationAware {
+        onNavigatedTo?: (params: any, payload?: any) => void;
+        canNavigateFrom?: (callback, navOptions: NavigationInfo) => void;
+        onNavigatedFrom?: (newNavOptions: NavigationInfo) => void;
+    }
+    //#endregion
+
+    export enum LoadingState {
+        canceled,
+        complete,
+        loading
     }
 
     export class Route {
@@ -36,32 +64,6 @@
             this.childRoutes = childRoutes || new Array();
             super(routePattern, options);
         }
-    };
-
-    export enum LoadingState {
-        canceled,
-        complete,
-        loading
-    }
-
-    export interface NavigationRouteOptions extends RouteOptions {
-        currentVM?: any;
-        cacheView?: boolean;
-        vmFactory?: any;
-        title?: string;
-        toolbarId?: string;
-    }
-
-    export interface NavigationInfo {
-        targetRoute: routes.Route;
-        forceReloadOnNavigation: boolean;
-        forceNavigationInCache: boolean;
-    }
-
-    export interface INavigationAware {
-        onNavigatedTo?: (params: any, payload?: any) => void;
-        canNavigateFrom?: (callback, navOptions: NavigationInfo) => void;
-        onNavigatedFrom?: (newNavOptions: NavigationInfo) => void;
     }
 
     export class NavigationRoute extends Route {
@@ -122,5 +124,5 @@
 
             super(routePattern, options);
         }
-    };
+    }
 }

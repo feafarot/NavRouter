@@ -22,6 +22,7 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>4.0</OldToolsVersion>
+    <UseGlobalApplicationHostFile />
   </PropertyGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
@@ -94,5 +95,8 @@
     <PostBuildEvent>if $(ConfigurationName)==Release powershell.exe "$(SolutionDir)Utils\remove-start-lines.ps1" "$(SolutionDir)Compiled\Release\navrouter.d.ts" 2</PostBuildEvent>
   </PropertyGroup>
   <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <PropertyGroup>
+    <PreBuildEvent>powershell.exe -Command "Get-ChildItem -Path '$(SolutionDir)Compiled\$(ConfigurationName)' -Include *.* -Recurse | foreach { $_.Delete()}"</PreBuildEvent>
+  </PropertyGroup>
   <!--<Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />-->
 </Project>

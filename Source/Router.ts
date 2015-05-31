@@ -9,7 +9,7 @@ module routing.utils {
         var funcNameRegex = /function (.+)\(/;
         var results = (funcNameRegex).exec((obj).constructor.toString());
         return (results && results.length > 1) ? results[1] : "";
-    };
+    }
 
     export function getHash(path: any): string {
         if (typeof path != "String" && path.toString != "undefined") {
@@ -19,7 +19,7 @@ module routing.utils {
         var matches = path.match(/^[^#]*(#.+)$/);
         var hash = matches ? matches[1] : "";
         return hash;
-    };
+    }
 
     export function newGuid(): string {
         var d = new Date().getTime();
@@ -29,7 +29,7 @@ module routing.utils {
             return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
         return uuid;
-    };
+    }
 
     export function filterArray<T>(array: Array<T>, predicate: (element: T) => boolean): Array<T> {
         var filtred = new Array<T>();
@@ -89,7 +89,7 @@ module routing {
             this.pattern = pattern || null;
             this.handler = handler || null;
         }
-    };
+    }
 
     export interface INavigationContext {
         associeatedRoute: routes.Route;
@@ -111,12 +111,12 @@ module routing {
         currentRoute: KnockoutObservable<routes.Route> = this.createCurrentRoute();
         history: string[] = new Array<string>();
 
-        onBeforeNavigation: utils.Event<any> = new utils.Event<any>();
-        onAfterNavigation: utils.Event<any> = new utils.Event<any>();
-        onNavigationError: utils.Event<any> = new utils.Event<any>();
-        onCancelledByUrl: utils.Event<any> = new utils.Event<any>();
+        onBeforeNavigation: routing.utils.Event<any> = new routing.utils.Event<any>();
+        onAfterNavigation: routing.utils.Event<any> = new routing.utils.Event<any>();
+        onNavigationError: routing.utils.Event<any> = new routing.utils.Event<any>();
+        onCancelledByUrl: routing.utils.Event<any> = new routing.utils.Event<any>();
 
-        private hashSymbol: string = "#!/";
+        private hashSymbol: string = "#?/";
         private defaultPath: string = "";
         private currentHash: string = "";
         private startupUrl: string = "";
@@ -270,20 +270,12 @@ module routing {
             this.registerRoutes(routes);
             this.currentLogger.info("Initialized.");
             return this;
-        };
+        }
 
         run(): Router {
             if (!this.initialized) {
                 throw new Error("Router is not initialized. Router should be initialized first!");
                 return;
-            }
-
-            if (this.forceCaching) {
-                // TODO: Implement preloading functionality!
-                //if (this.onPreloadComplete)
-                //{
-                //    this.onPreloadComplete();
-                //}
             }
 
             this.defaultTitle = document.title;
@@ -405,12 +397,6 @@ module routing {
             return completePath;
         }
 
-        // TODO: Maybe remove
-        //private create(className)
-        //{
-        //    return eval("new " + className + "()");
-        //}
-
         private fixPath(path: string): string {
             if (!path.match(/^/ + this.hashSymbol + /.+/)) {
                 return this.hashSymbol + path.replace("#/", "");
@@ -479,14 +465,14 @@ module routing {
             // Can leave route processing.
             if (!this.isRedirecting) {
                 this.currentRoute().canLeave(
-                    (accept: boolean) => {   // Leaving callvack parameter
+                    (accept: boolean) => {   // Leaving callback parameter
                         if (accept) {   // Leave navigation accepted
                             this.isRedirecting = false;
                             this.currentHash = hash;
                             callback(false);
                             this.preventRaisingNavigateTo = false;
                         }
-                        else {   // Navigation cancelled
+                        else {   // Navigation canceled
                             this.backNavigation = false;
                             callback(true);
                         }
@@ -533,7 +519,7 @@ module routing {
                 this.currentLogger.info("Navigated to '" + hash + "'.");
             }
             else {
-                this.currentLogger.info("Navigion was prevented.");
+                this.currentLogger.info("Navigation was prevented.");
             }
 
             this.refreshCurrentRoute();
@@ -592,7 +578,7 @@ module routing {
                 //if (this.forceCaching)
                 //{
                 //    routeToMap.enable
-                //} // wtf?
+                //}
 
                 if (routeToMap.title) {
                     document.title = routeToMap.title;
@@ -627,7 +613,7 @@ module routing {
                             error: onNavigationError,
                             success: (response) => {
                                 if (routeToMap.state == routes.LoadingState.canceled) {
-                                    this.currentLogger.warning("Navigation to " + context.path + " was cancelled!");
+                                    this.currentLogger.warning("Navigation to " + context.path + " was canceled!");
                                     return;
                                 }
 
@@ -677,7 +663,7 @@ module routing {
                         error: onNavigationError,
                         success: (response) => {
                             if (routeToMap.state == routes.LoadingState.canceled) {
-                                this.currentLogger.warning("Navigation to " + context.path + " were cancelled!");
+                                this.currentLogger.warning("Navigation to " + context.path + " were canceled!");
                                 return;
                             }
 
@@ -714,12 +700,6 @@ module routing {
             this.allRoutes.push(routeToMap);
             this.currentLogger.info("Registering route '" + routeToMap.pattern + "'.");
             switch (utils.getType(routeToMap)) {
-                //case "FuncRoute":
-                //    this.handlers.push(new RouteHandler(routeToMap.pattern, function (context)
-                //    {
-                //        routeToMap.func();
-                //    }));
-                //    break;
                 case "VirtualRoute":
                     this.mapVirtualRoute(<routes.VirtualRoute>routeToMap);
                     break;
